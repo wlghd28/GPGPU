@@ -8,7 +8,7 @@
 
 #include "deviceInfo.h"
 
-const int G_SIZE = 1000;
+const int G_SIZE = 10000;
 
 // kernel을 읽어서 char pointer생성
 char* readSource(char* kernelPath) {
@@ -155,24 +155,26 @@ void bufferWrite()
 {
 	// 메모리 버퍼 생성
 
+	d_inputArray_A = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+		G_SIZE * sizeof(int), NULL, NULL);
+	d_inputArray_B = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+		G_SIZE * sizeof(int), NULL, NULL);
+	d_outputArray = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
+		G_SIZE * sizeof(int), NULL, NULL);
+	/*
 	d_inputArray_A = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		G_SIZE * sizeof(int), NULL, NULL);
 	d_inputArray_B = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		G_SIZE * sizeof(int), NULL, NULL);
 	d_outputArray = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		G_SIZE * sizeof(int), NULL, NULL);
-
-	int* inputArray_A = (int*)malloc(sizeof(int) * G_SIZE);
-	int* inputArray_B = (int*)malloc(sizeof(int) * G_SIZE);
-
+		*/
 
 	clEnqueueWriteBuffer(queue, d_inputArray_A, CL_TRUE, 0, G_SIZE * sizeof(int),
-		inputArray_A, 0, NULL, NULL);
+		NULL, 0, NULL, NULL);
 	clEnqueueWriteBuffer(queue, d_inputArray_B, CL_TRUE, 0, G_SIZE * sizeof(int),
-		inputArray_B, 0, NULL, NULL);
+		NULL, 0, NULL, NULL);
 
-	free(inputArray_A);
-	free(inputArray_B);
 }
 
 void runKernel()
@@ -199,13 +201,13 @@ void runKernel()
 
 	// 완료 대기 
 	clFinish(queue);
-
+	/*
 	int* outputArray = (int*)malloc(sizeof(int) * G_SIZE);
 	clEnqueueReadBuffer(queue, d_outputArray, CL_TRUE, 0,
 		G_SIZE * sizeof(int), outputArray, 0, NULL, NULL);
 
-
 	free(outputArray);
+	*/
 }
 
 void Release()
