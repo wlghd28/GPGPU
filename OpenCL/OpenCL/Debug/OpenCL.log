@@ -27,9 +27,9 @@ c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(126): warning C4996: 
   c:\program files (x86)\windows kits\10\include\10.0.16299.0\ucrt\stdio.h(1272): note: 'scanf' 선언을 참조하십시오.
 c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(136): warning C4996: 'clCreateCommandQueue': deprecated로 선언되었습니다.
   c:\program files (x86)\intelswtools\opencl\sdk\include\cl\cl.h(1428): note: 'clCreateCommandQueue' 선언을 참조하십시오.
-c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(205): warning C4838: 'int'에서 '::size_t'(으)로의 변환에는 축소 변환이 필요합니다.
-c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(207): warning C4101: 'maxVal' :참조되지 않은 지역 변수입니다.
-c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(207): warning C4101: 'minVal' :참조되지 않은 지역 변수입니다.
+c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(186): warning C4838: 'int'에서 '::size_t'(으)로의 변환에는 축소 변환이 필요합니다.
+c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(188): warning C4101: 'maxVal' :참조되지 않은 지역 변수입니다.
+c:\users\mycom\desktop\회사업무\opencl\opencl\host.cpp(188): warning C4101: 'minVal' :참조되지 않은 지역 변수입니다.
   OpenCL.vcxproj -> C:\Users\mycom\Desktop\회사업무\OpenCL\Debug\OpenCL.exe
   convolution.cl
   device.cl

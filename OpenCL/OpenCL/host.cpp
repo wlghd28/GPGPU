@@ -8,7 +8,7 @@
 
 #include "deviceInfo.h"
 
-const long int G_SIZE = 1000;
+const int G_SIZE = 1000;
 
 // kernel을 읽어서 char pointer생성
 char* readSource(char* kernelPath) {
@@ -165,26 +165,7 @@ void bufferWrite()
 	int* inputArray_A = (int*)malloc(sizeof(int) * G_SIZE);
 	int* inputArray_B = (int*)malloc(sizeof(int) * G_SIZE);
 
-	for (int i = 0; i < G_SIZE; i++)
-	{
-		inputArray_A[i] = i + 1;
-		inputArray_B[i] = (i + 1) * 2 + 2;
-	}
-	/*
-	int i;
-	printf("Array A : ");
-	for (i = 0; i < 1000; i++)
-	{
-		printf("%d ", inputArray_A[i]);
-	}
-	printf("\n");
-	printf("Array B : ");
-	for (i = 0; i < 1000; i++)
-	{
-		printf("%d ", inputArray_B[i]);
-	}
-	printf("\n");
-	*/
+
 	clEnqueueWriteBuffer(queue, d_inputArray_A, CL_TRUE, 0, G_SIZE * sizeof(int),
 		inputArray_A, 0, NULL, NULL);
 	clEnqueueWriteBuffer(queue, d_inputArray_B, CL_TRUE, 0, G_SIZE * sizeof(int),
@@ -223,14 +204,6 @@ void runKernel()
 	clEnqueueReadBuffer(queue, d_outputArray, CL_TRUE, 0,
 		G_SIZE * sizeof(int), outputArray, 0, NULL, NULL);
 
-	/*
-	printf("output  : ");
-	for (int i = 0; i < G_SIZE; i++)
-	{
-		printf("%d ", outputArray[i]);
-	}
-	printf("\n");
-	*/
 
 	free(outputArray);
 }
@@ -253,7 +226,7 @@ void CpuCal() {
 		inputArray_A[i] = i + 1;
 		inputArray_B[i] = (i + 1) * 2 + 2;
 	}
-	/*
+
 	int i;
 	printf("Array A : ");
 	for (i = 0; i < G_SIZE; i++)
@@ -267,7 +240,6 @@ void CpuCal() {
 		printf("%d ", inputArray_B[i]);
 	}
 	printf("\n");
-	*/
 
 	for (int i = 0; i < G_SIZE; i++)
 	{

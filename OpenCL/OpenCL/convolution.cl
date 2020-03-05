@@ -13,8 +13,11 @@ void simpleKernel(__global int* inputArray_A,
 	uint dstIndex = get_global_id(1) * dstYStride + get_global_id(0);
 	uint globalRow = get_global_id(1);
 	uint globalCol = get_global_id(0);
-
+	inputArray_A[dstIndex] = dstIndex + 1;
+	inputArray_B[dstIndex] = (dstIndex + 1) * 2 + 2;
 	outputArray[dstIndex] = inputArray_A[dstIndex]+inputArray_B[dstIndex];
+	printf("%d ", inputArray_A[dstIndex]);
+	printf("%d ", inputArray_B[dstIndex]);
 	printf("%d ", outputArray[dstIndex]);
 
 }
