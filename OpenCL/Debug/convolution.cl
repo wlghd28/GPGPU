@@ -15,5 +15,6 @@ void simpleKernel(__global int* inputArray_A,
 	uint globalCol = get_global_id(0);
 
 	outputArray[dstIndex] = inputArray_A[dstIndex]+inputArray_B[dstIndex];
+	printf("%d ", outputArray[dstIndex]);
 
 }

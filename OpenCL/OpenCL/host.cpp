@@ -8,6 +8,8 @@
 
 #include "deviceInfo.h"
 
+const long int G_SIZE = 1000;
+
 // kernel을 읽어서 char pointer생성
 char* readSource(char* kernelPath) {
 
@@ -151,49 +153,53 @@ void CLInit()
 //버퍼생성 및 write
 void bufferWrite()
 {
-
-
 	// 메모리 버퍼 생성
 
 	d_inputArray_A = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		10 * sizeof(int), NULL, NULL);
+		G_SIZE * sizeof(int), NULL, NULL);
 	d_inputArray_B = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		10 * sizeof(int), NULL, NULL);
+		G_SIZE * sizeof(int), NULL, NULL);
 	d_outputArray = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		10 * sizeof(int), NULL, NULL);
+		G_SIZE * sizeof(int), NULL, NULL);
 
-	int inputArray_A[10] = { 2,2,2,2,2,3,3,3,3,3 };
-	int inputArray_B[10] = { 1,1,1,1,1,4,4,4,4,4 };
+	int* inputArray_A = (int*)malloc(sizeof(int) * G_SIZE);
+	int* inputArray_B = (int*)malloc(sizeof(int) * G_SIZE);
 
-
+	for (int i = 0; i < G_SIZE; i++)
+	{
+		inputArray_A[i] = i + 1;
+		inputArray_B[i] = (i + 1) * 2 + 2;
+	}
+	/*
 	int i;
 	printf("Array A : ");
-	for (i = 0; i < 10; i++)
+	for (i = 0; i < 1000; i++)
 	{
 		printf("%d ", inputArray_A[i]);
 	}
 	printf("\n");
 	printf("Array B : ");
-	for (i = 0; i < 10; i++)
+	for (i = 0; i < 1000; i++)
 	{
 		printf("%d ", inputArray_B[i]);
 	}
 	printf("\n");
-
-	clEnqueueWriteBuffer(queue, d_inputArray_A, CL_TRUE, 0, 10 * sizeof(int),
+	*/
+	clEnqueueWriteBuffer(queue, d_inputArray_A, CL_TRUE, 0, G_SIZE * sizeof(int),
 		inputArray_A, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_inputArray_B, CL_TRUE, 0, 10 * sizeof(int),
+	clEnqueueWriteBuffer(queue, d_inputArray_B, CL_TRUE, 0, G_SIZE * sizeof(int),
 		inputArray_B, 0, NULL, NULL);
 
-
+	free(inputArray_A);
+	free(inputArray_B);
 }
 
 void runKernel()
 {
 
-	int i;
+	//int i;
 
-	int totalWorkItemsX = 10;
+	int totalWorkItemsX = G_SIZE;
 	int totalWorkItemsY = 1;
 
 	size_t globalSize[2] = { totalWorkItemsX, totalWorkItemsY };
@@ -213,17 +219,20 @@ void runKernel()
 	// 완료 대기 
 	clFinish(queue);
 
-	int outputArray[10];
+	int* outputArray = (int*)malloc(sizeof(int) * G_SIZE);
 	clEnqueueReadBuffer(queue, d_outputArray, CL_TRUE, 0,
-		10 * sizeof(int), outputArray, 0, NULL, NULL);
+		G_SIZE * sizeof(int), outputArray, 0, NULL, NULL);
 
-
+	/*
 	printf("output  : ");
-	for (i = 0; i < 10; i++)
+	for (int i = 0; i < G_SIZE; i++)
 	{
 		printf("%d ", outputArray[i]);
 	}
 	printf("\n");
+	*/
+
+	free(outputArray);
 }
 
 void Release()
@@ -235,39 +244,49 @@ void Release()
 }
 
 void CpuCal() {
-	int inputArray_A[10] = { 2,2,2,2,2,3,3,3,3,3 };
-	int inputArray_B[10] = { 1,1,1,1,1,4,4,4,4,4 };
-	int outputArray[10];
+	int* inputArray_A = (int*)malloc(sizeof(int) * G_SIZE);
+	int* inputArray_B = (int*)malloc(sizeof(int) * G_SIZE);
+	int* outputArray = (int*)malloc(sizeof(int) * G_SIZE);
 
+	for (int i = 0; i < G_SIZE; i++)
+	{
+		inputArray_A[i] = i + 1;
+		inputArray_B[i] = (i + 1) * 2 + 2;
+	}
+	/*
 	int i;
 	printf("Array A : ");
-	for (i = 0; i < 10; i++)
+	for (i = 0; i < G_SIZE; i++)
 	{
 		printf("%d ", inputArray_A[i]);
 	}
 	printf("\n");
 	printf("Array B : ");
-	for (i = 0; i < 10; i++)
+	for (i = 0; i < G_SIZE; i++)
 	{
 		printf("%d ", inputArray_B[i]);
 	}
 	printf("\n");
+	*/
 
-	for (i = 0; i < 10; i++)
+	for (int i = 0; i < G_SIZE; i++)
 	{
 		outputArray[i] = inputArray_A[i] + inputArray_B[i];
 	}
 
-	printf("output  : ");
-	for (i = 0; i < 10; i++)
+	//printf("output  : ");
+	for (int i = 0; i < G_SIZE; i++)
 	{
 		printf("%d ", outputArray[i]);
 	}
-	printf("\n");
+	//printf("\n");
+
+	free(inputArray_A);
+	free(inputArray_B);
+	free(outputArray);
 }
 
 int main(int argc, char** argv) {
-
 
 	QueryPerformanceFrequency(&tot_clockFreq);
 
@@ -301,8 +320,4 @@ int main(int argc, char** argv) {
 
 	return 0;
 
-
-
-
 }
-// Add you host code
