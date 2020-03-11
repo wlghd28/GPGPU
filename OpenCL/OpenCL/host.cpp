@@ -30,7 +30,7 @@ struct Palette {
 }rgb;
 #pragma pack(pop)	
 
-const int G_SIZE = 10;
+const long int G_SIZE = 10000;
 
 // kernel을 읽어서 char pointer생성
 char* readSource(char* kernelPath) {
@@ -175,51 +175,52 @@ void CLInit()
 //버퍼생성 및 write
 void bufferWrite()
 {
-	int i = 0;
 
 	// 메모리 버퍼 생성
-	d_inputArray_A = clCreateBuffer(context, CL_MEM_READ_ONLY,
-		G_SIZE * sizeof(FILE*), NULL, NULL);
-	d_inputArray_B = clCreateBuffer(context, CL_MEM_READ_ONLY,
-		G_SIZE * sizeof(FILE*), NULL, NULL);
-	d_outputArray = clCreateBuffer(context, CL_MEM_WRITE_ONLY,
-		2400000 * sizeof(COLORREF), NULL, NULL);
+	
+	d_inputArray_A = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		G_SIZE * sizeof(struct Palette), NULL, NULL);
+	d_inputArray_B = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		G_SIZE * sizeof(struct Palette), NULL, NULL);
+	d_outputArray = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		G_SIZE * sizeof(struct Palette), NULL, NULL);
 
+	FILE* fp_A;
+	FILE* fp_B;
+	struct Bitmapfileheader bfh;
+	struct Bitmapinfoheader bih;
+	struct Palette rgb1, rgb2;
 
-	FILE** inputArray_A = (FILE**)malloc(sizeof(FILE*) * G_SIZE);
-	FILE** inputArray_B = (FILE**)malloc(sizeof(FILE*) * G_SIZE);
-	COLORREF* outputArray = (COLORREF*)malloc(sizeof(COLORREF) * 2400000);
-	for (i = 0; i < G_SIZE; i++) {
-		inputArray_A[i] = (FILE*)malloc(sizeof(FILE));
-		inputArray_B[i] = (FILE*)malloc(sizeof(FILE));
+	fp_A = fopen("background.bmp", "rb");
+	fp_B = fopen("background2.bmp", "rb");
+	if (fp_A == NULL || fp_B == NULL)
+	{
+		printf("file not found");
+		getchar();
+		exit(0);
+	}
+	fread(&bfh, sizeof(bfh), 1, fp_A);
+	fread(&bih, sizeof(bih), 1, fp_A);
+
+	struct Palette* inputArray_A = (struct Palette*)malloc(sizeof(struct Palette) * G_SIZE);
+	struct Palette* inputArray_B = (struct Palette*)malloc(sizeof(struct Palette) * G_SIZE);
+	
+	for (int j = 0; j < bih.biheight; j++)
+	{
+		for (int k = 0; k < bih.biwidth; k++)
+		{
+			fread(&rgb1, 3, 1, fp_A);
+			fread(&rgb2, 3, 1, fp_B);
+		}
 	}
 	for (int i = 0; i < G_SIZE; i++) {
-		inputArray_A[i] = fopen("background.bmp", "rb");
-
-		if (inputArray_A[i] == NULL)
-		{
-			printf("file not found");
-			getchar();
-			exit(0);
-		}
-
-		inputArray_B[i] = fopen("background2.bmp", "rb");
-
-		if (inputArray_B[i] == NULL)
-		{
-			printf("file not found");
-			getchar();
-			exit(0);
-		}
+		inputArray_A[i].red = rgb1.red;
+		inputArray_A[i].green = rgb1.green;
+		inputArray_A[i].blue = rgb1.blue;
+		inputArray_B[i].red = rgb2.red;
+		inputArray_B[i].green = rgb2.green;
+		inputArray_B[i].blue = rgb2.blue;
 	}
-	for (i = 0; i < G_SIZE; i++) {
-		free(inputArray_A[i]);
-		free(inputArray_B[i]);
-	}
-	free(inputArray_A);
-	free(inputArray_B);
-	free(outputArray);
-
 	/*
 	d_inputArray_A = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		G_SIZE * sizeof(int), NULL, NULL);
@@ -228,12 +229,16 @@ void bufferWrite()
 	d_outputArray = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		G_SIZE * sizeof(int), NULL, NULL);
 		*/
-	clEnqueueWriteBuffer(queue, d_inputArray_A, CL_TRUE, 0, G_SIZE * sizeof(FILE*),
+	clEnqueueWriteBuffer(queue, d_inputArray_A, CL_TRUE, 0, sizeof(struct Palette) * G_SIZE,
 		inputArray_A, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_inputArray_B, CL_TRUE, 0, G_SIZE * sizeof(FILE*),
+	clEnqueueWriteBuffer(queue, d_inputArray_B, CL_TRUE, 0, sizeof(struct Palette) * G_SIZE,
 		inputArray_B, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_outputArray, CL_TRUE, 0, 2400000 * sizeof(COLORREF),
-		outputArray, 0, NULL, NULL);
+
+	fclose(fp_A);
+	fclose(fp_B);
+
+	free(inputArray_A);
+	free(inputArray_B);
 }
 
 void runKernel()
@@ -248,25 +253,25 @@ void runKernel()
 	//float *minVal, *maxVal;
 
 	// 커널 매개변수 설정 
-
 	clSetKernelArg(simpleKernel, 0, sizeof(cl_mem), &d_inputArray_A);
 	clSetKernelArg(simpleKernel, 1, sizeof(cl_mem), &d_inputArray_B);
 	clSetKernelArg(simpleKernel, 2, sizeof(cl_mem), &d_outputArray);
-
 	clEnqueueNDRangeKernel(queue, simpleKernel, 2, NULL, globalSize,
 		NULL, 0, NULL, NULL);
-	
-
 	// 완료 대기 
 	clFinish(queue);
+	
 
+	struct Palette* outputArray = (struct Palette*)malloc(sizeof(struct Palette) * G_SIZE);
 	/*
-	int* outputArray = (int*)malloc(sizeof(int) * G_SIZE);
+	for (int i = 0; i < G_SIZE; i++) {
+		printf("%d %d %d\n", outputArray[i].red, outputArray[i].green, outputArray[i].blue);
+	}
+	*/
 	clEnqueueReadBuffer(queue, d_outputArray, CL_TRUE, 0,
-		G_SIZE * sizeof(int), outputArray, 0, NULL, NULL);
+		G_SIZE * sizeof(struct Palette), outputArray, 0, NULL, NULL);
 
 	free(outputArray);
-	*/
 }
 
 void Release()
@@ -276,8 +281,63 @@ void Release()
 	clReleaseCommandQueue(queue);
 	clReleaseContext(context);
 }
-
 void CpuCal() {
+
+	int index = 0;
+	FILE* fp_A;
+	FILE* fp_B;
+	struct Bitmapfileheader bfh;
+	struct Bitmapinfoheader bih;
+	COLORREF* output;
+	struct Palette rgb1, rgb2;
+
+	struct Palette* inputArray_A = (struct Palette*)malloc(sizeof(struct Palette) * G_SIZE);
+	struct Palette* inputArray_B = (struct Palette*)malloc(sizeof(struct Palette) * G_SIZE);
+	struct Palette* outputArray = (struct Palette*)malloc(sizeof(struct Palette) * G_SIZE);
+
+	fp_A = fopen("background.bmp", "rb");
+	fp_B = fopen("background2.bmp", "rb");
+
+	if (fp_A == NULL)
+	{
+		printf("file not found");
+		getchar();
+		exit(0);
+	}
+	if (fp_B == NULL)
+	{
+		printf("file not found");
+		getchar();
+		exit(0);
+	}
+	fread(&bfh, sizeof(bfh), 1, fp_A);
+	fread(&bih, sizeof(bih), 1, fp_A);
+
+	for (int j = 0; j < bih.biheight; j++)
+	{
+		for (int k = 0; k < bih.biwidth; k++)
+		{
+			fread(&rgb1, 3, 1, fp_A);
+			fread(&rgb2, 3, 1, fp_B);
+			// 배경화면의 RGB 정보를 좌표에 따라 저장.
+		}
+	}
+
+	for (int i = 0; i < G_SIZE; i++) {
+		outputArray[i].red = (inputArray_A[i].red * 0.5) + (inputArray_B[i].red * 0.5);
+		outputArray[i].green = (inputArray_A[i].green * 0.5) + (inputArray_B[i].green * 0.5);
+		outputArray[i].blue = (inputArray_A[i].blue * 0.5) + (inputArray_B[i].blue * 0.5);
+		//printf("%d %d %d\n", outputArray[i].red, outputArray[i].green, outputArray[i].blue);
+	}
+
+	fclose(fp_A);
+	fclose(fp_B);
+
+	free(inputArray_A);
+	free(inputArray_B);
+	free(outputArray);
+
+
 	/*
 	int* inputArray_A = (int*)malloc(sizeof(int) * G_SIZE);
 	int* inputArray_B = (int*)malloc(sizeof(int) * G_SIZE);
@@ -319,10 +379,7 @@ void CpuCal() {
 	free(inputArray_B);
 	free(outputArray);
 	*/
-	for (int i = 0; i < G_SIZE; i++)
-	{
-		printf("test");
-	}
+
 }
 
 int main(int argc, char** argv) {
