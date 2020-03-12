@@ -4,9 +4,15 @@
 
 __kernel
 void simpleKernel(
-	__global struct Palette* inputArray_A,
-	__global struct Palette* inputArray_B,
-	__global struct Palette* outputArray
+	__global unsigned char* red_A,
+	__global unsigned char* green_A,
+	__global unsigned char* blue_A,
+	__global unsigned char* red_B,
+	__global unsigned char* green_B,
+	__global unsigned char* blue_B,
+	__global unsigned char* red_output,
+	__global unsigned char* green_output,
+	__global unsigned char* blue_output
 )
 {	
 
@@ -15,18 +21,9 @@ void simpleKernel(
 	uint globalRow = get_global_id(1);
 	uint globalCol = get_global_id(0);
 
-	outputArray[dstIndex].red = (inputArray_A[dstIndex].red * 0.5) + (inputArray_B[dstIndex].red * 0.5);
-	outputArray[dstIndex].green = (inputArray_A[dstIndex].green * 0.5) + (inputArray_B[dstIndex].green * 0.5);
-	outputArray[dstIndex].blue = (inputArray_A[dstIndex].blue * 0.5) + (inputArray_B[dstIndex].blue * 0.5);
-	
-	printf("정상실행");
-	/*
-	inputArray_A[dstIndex] = dstIndex + 1;
-	inputArray_B[dstIndex] = (dstIndex + 1) * 2 + 2;
-	outputArray[dstIndex] = inputArray_A[dstIndex]+inputArray_B[dstIndex];
-	printf("%d ", inputArray_A[dstIndex]);
-	printf("%d ", inputArray_B[dstIndex]);
-	printf("%d ", outputArray[dstIndex]);
-	*/
+
+	red_output[dstIndex] = (red_A[dstIndex] * 0.5) + (red_B[dstIndex] * 0.5);
+	green_output[dstIndex] = (green_A[dstIndex] * 0.5) + (green_B[dstIndex] * 0.5);
+	blue_output[dstIndex] = (blue_A[dstIndex] * 0.5) + (blue_B[dstIndex] * 0.5);
 
 }

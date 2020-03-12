@@ -124,6 +124,7 @@
       <WarningLevel>Level3</WarningLevel>
       <DebugInformationFormat>ProgramDatabase</DebugInformationFormat>
       <PrecompiledHeader />
+      <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
     </ClCompile>
     <Link>
       <AdditionalLibraryDirectories>$(INTELOCLSDKROOT)lib\x86;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
@@ -186,10 +187,14 @@
     </PostBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Intel_OpenCL_Build_Rules Include="convolution.cl" />
     <Intel_OpenCL_Build_Rules Include="device.cl" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="host.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="deviceInfo.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

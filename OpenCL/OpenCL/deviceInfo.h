@@ -14,9 +14,15 @@
 LARGE_INTEGER beginClock, endClock, clockFreq;
 LARGE_INTEGER tot_beginClock, tot_endClock, tot_clockFreq;
 
-cl_mem   d_inputArray_A;
-cl_mem   d_inputArray_B;
-cl_mem   d_outputArray;
+cl_mem   d_red_A;
+cl_mem   d_green_A;
+cl_mem   d_blue_A;
+cl_mem   d_red_B;
+cl_mem   d_green_B;
+cl_mem   d_blue_B;
+cl_mem   d_red_output;
+cl_mem   d_green_output;
+cl_mem   d_blue_output;
 
 cl_platform_id platform;
 

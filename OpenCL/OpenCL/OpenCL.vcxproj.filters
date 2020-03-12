@@ -18,10 +18,18 @@
     <Intel_OpenCL_Build_Rules Include="device.cl">
       <Filter>OpenCL Files</Filter>
     </Intel_OpenCL_Build_Rules>
+    <Intel_OpenCL_Build_Rules Include="convolution.cl">
+      <Filter>OpenCL Files</Filter>
+    </Intel_OpenCL_Build_Rules>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="host.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="deviceInfo.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
