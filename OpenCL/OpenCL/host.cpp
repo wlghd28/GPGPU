@@ -30,7 +30,6 @@ struct Palette {
 }rgb;
 #pragma pack(pop)	
 
-const long int G_SIZE = 1000;
 
 int bihwidth;
 int bihheight;
@@ -331,13 +330,12 @@ void Release()
 	clReleaseCommandQueue(queue);
 	clReleaseContext(context);
 }
-void CpuCal() {
+void CpuCal(long int size) {
 
 	FILE* fp_A;
 	FILE* fp_B;
 	struct Bitmapfileheader bfh;
 	struct Bitmapinfoheader bih;
-	COLORREF* output;
 	struct Palette rgb1, rgb2;
 
 	struct Palette* outputArray;
@@ -366,9 +364,15 @@ void CpuCal() {
 	{	
 		fread(&rgb1, 3, 1, fp_A);
 		fread(&rgb2, 3, 1, fp_B);
-		outputArray[i].red = (rgb1.red * (i + 1)/ bih.biheight * bih.biwidth) + (rgb2.red * (i + 1) / bih.biheight * bih.biwidth);
-		outputArray[i].green = (rgb1.green * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.green * (i + 1) / bih.biheight * bih.biwidth);
-		outputArray[i].blue = (rgb1.blue * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.blue * (i + 1) / bih.biheight * bih.biwidth);
+	}
+
+	for (int i = 0; i < size; i++) {
+		for (int i = 0; i < bih.biheight * bih.biwidth; i++)
+		{
+			outputArray[i].red = (rgb1.red * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.red * (i + 1) / bih.biheight * bih.biwidth);
+			outputArray[i].green = (rgb1.green * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.green * (i + 1) / bih.biheight * bih.biwidth);
+			outputArray[i].blue = (rgb1.blue * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.blue * (i + 1) / bih.biheight * bih.biwidth);
+		}
 	}
 	/*
 	int index = 0;
@@ -394,41 +398,46 @@ void CpuCal() {
 
 int main(int argc, char** argv) {
 
+	long int data_size;	// 데이터 양 변수
+	long int i = 0;		// 반복문 변수
+
+	printf("실험할 데이터 량 입력 : ");
+	scanf("%d", &data_size);
+
 	QueryPerformanceFrequency(&tot_clockFreq);
 
 	// OpenCL 디바이스, 커널 셋업
 	CLInit();
-	for(int i = 0; i < G_SIZE; i++) 
-	{
-		QueryPerformanceCounter(&tot_beginClock); //시간측정 시작
+	
+	QueryPerformanceCounter(&tot_beginClock); //시간측정 시작
 
 	//디바이스 쪽 버퍼 생성 및 write								 
-		bufferWrite();
+	bufferWrite();
 
+	for (i = 0; i < data_size; i++) {
 		//커널 실행
 		runKernel();
-
-		QueryPerformanceCounter(&tot_endClock);
-		double totalTime = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
-		printf("Total processing Time_GPU : %f ms     ", totalTime * 1000);
-
-		//system("pause");
-
-		Release();
-
-		// CPU 연산
-		QueryPerformanceCounter(&tot_beginClock); //시간측정 시작
-
-		CpuCal();
-
-		QueryPerformanceCounter(&tot_endClock);
-		double totalTime2 = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
-		printf("Total processing Time_CPU : %f ms\n", totalTime2 * 1000);
-
-		printf("\n");
 	}
 
+	QueryPerformanceCounter(&tot_endClock);
+	double totalTime = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
+	printf("Total processing Time_GPU : %f ms\n", totalTime * 1000);
+
+	Release();
+
+	printf("\n");
+
+	// CPU 연산
+	QueryPerformanceCounter(&tot_beginClock); //시간측정 시작
+
+	//CPU 연산
+	CpuCal(data_size);
+
+	QueryPerformanceCounter(&tot_endClock);
+	double totalTime2 = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
+	printf("Total processing Time_CPU : %f ms\n", totalTime2 * 1000);
+
+	system("pause");
 
 	return 0;
-
 }
