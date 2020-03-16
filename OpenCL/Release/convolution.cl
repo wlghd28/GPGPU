@@ -17,13 +17,14 @@ void simpleKernel(
 {	
 
 	uint dstYStride = get_global_size(0);
-	uint dstIndex = get_global_id(1) * dstYStride + get_global_id(0);
+	uint dstXStride = get_global_size(1);
 	uint globalRow = get_global_id(1);
 	uint globalCol = get_global_id(0);
+	uint dstIndex = globalRow * dstYStride + globalCol * dstXStride;
+	uint dept = dstYStride * dstXStride;
 
-
-	red_output[dstIndex] = (red_A[dstIndex] * (dstIndex/(globalRow * globalCol))) + (red_B[dstIndex] * (dstIndex/(globalRow * globalCol)));
-	green_output[dstIndex] = (green_A[dstIndex] * (dstIndex/(globalRow * globalCol))) + (green_B[dstIndex] * (dstIndex/(globalRow * globalCol)));
-	blue_output[dstIndex] = (blue_A[dstIndex] * (dstIndex/(globalRow * globalCol))) + (blue_B[dstIndex] * (dstIndex/(globalRow * globalCol)));
+	red_output[dstIndex] = (red_A[dstIndex] * dstIndex / dept) + (red_B[dstIndex] * dstIndex / dept);
+	green_output[dstIndex] = (green_A[dstIndex] * dstIndex / dept) + (green_B[dstIndex] * dstIndex / dept);
+	blue_output[dstIndex] = (blue_A[dstIndex] * dstIndex / dept) + (blue_B[dstIndex] * dstIndex / dept);
 
 }

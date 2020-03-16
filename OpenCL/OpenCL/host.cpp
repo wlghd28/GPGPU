@@ -31,8 +31,8 @@ struct Palette {
 #pragma pack(pop)	
 
 
-int bihwidth;
-int bihheight;
+int bihwidth;		// 이미지 가로 사이즈
+int bihheight;		// 이미지 세로 사이즈 (line 수)
 
 // kernel을 읽어서 char pointer생성
 char* readSource(char* kernelPath) {
@@ -195,42 +195,42 @@ void bufferWrite()
 	fread(&bfh, sizeof(bfh), 1, fp_A);
 	fread(&bih, sizeof(bih), 1, fp_A);
 
-	bihwidth = bih.biwidth;
+	bihwidth = ((bih.biwidth + 3) / 4) * 4;
 	bihheight = bih.biheight;
 
 	// 메모리 버퍼 생성
 
 	d_red_A = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_green_A = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_blue_A = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_red_B = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_green_B = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_blue_B = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_red_output = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_green_output = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 	d_blue_output = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bih.biwidth * bih.biheight * sizeof(unsigned char), NULL, NULL);
+		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
 
 
-	unsigned char* red_A = (unsigned char*)malloc(sizeof(unsigned char) * bih.biwidth * bih.biheight);
-	unsigned char* green_A = (unsigned char*)malloc(sizeof(unsigned char) * bih.biwidth * bih.biheight);
-	unsigned char* blue_A = (unsigned char*)malloc(sizeof(unsigned char) * bih.biwidth * bih.biheight);
-	unsigned char* red_B = (unsigned char*)malloc(sizeof(unsigned char) * bih.biwidth * bih.biheight);
-	unsigned char* green_B = (unsigned char*)malloc(sizeof(unsigned char) * bih.biwidth * bih.biheight);
-	unsigned char* blue_B = (unsigned char*)malloc(sizeof(unsigned char) * bih.biwidth * bih.biheight);
+	unsigned char* red_A = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
+	unsigned char* green_A = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
+	unsigned char* blue_A = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
+	unsigned char* red_B = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
+	unsigned char* green_B = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
+	unsigned char* blue_B = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
 
 	
-	for (int i = 0; i < bih.biwidth * bih.biheight; i++) {
-		fread(&rgb1, 3, 1, fp_A);
-		fread(&rgb2, 3, 1, fp_B);
+	for (int i = 0; i < bihwidth * bihheight; i++) {
+		fread(&rgb1, 4, 1, fp_A);
+		fread(&rgb2, 4, 1, fp_B);
 		red_A[i] = rgb1.red;
 		green_A[i] = rgb1.green;
 		blue_A[i] = rgb1.blue;
@@ -241,17 +241,17 @@ void bufferWrite()
 	}
 
 	
-	clEnqueueWriteBuffer(queue, d_red_A, CL_TRUE, 0, sizeof(unsigned char) * bih.biwidth * bih.biheight,
+	clEnqueueWriteBuffer(queue, d_red_A, CL_TRUE, 0, sizeof(unsigned char) * bihwidth * bihheight,
 		red_A, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_green_A, CL_TRUE, 0, sizeof(unsigned char) * bih.biwidth * bih.biheight,
+	clEnqueueWriteBuffer(queue, d_green_A, CL_TRUE, 0, sizeof(unsigned char) * bihwidth * bihheight,
 		green_A, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_blue_A, CL_TRUE, 0, sizeof(unsigned char) * bih.biwidth * bih.biheight,
+	clEnqueueWriteBuffer(queue, d_blue_A, CL_TRUE, 0, sizeof(unsigned char) * bihwidth * bihheight,
 		blue_A, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_red_B, CL_TRUE, 0, sizeof(unsigned char) * bih.biwidth * bih.biheight,
+	clEnqueueWriteBuffer(queue, d_red_B, CL_TRUE, 0, sizeof(unsigned char) * bihwidth * bihheight,
 		red_B, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_green_B, CL_TRUE, 0, sizeof(unsigned char) * bih.biwidth * bih.biheight,
+	clEnqueueWriteBuffer(queue, d_green_B, CL_TRUE, 0, sizeof(unsigned char) * bihwidth * bihheight,
 		green_B, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_blue_B, CL_TRUE, 0, sizeof(unsigned char) * bih.biwidth * bih.biheight,
+	clEnqueueWriteBuffer(queue, d_blue_B, CL_TRUE, 0, sizeof(unsigned char) * bihwidth * bihheight,
 		blue_B, 0, NULL, NULL);
 
 	free(red_A);
@@ -293,22 +293,19 @@ void runKernel()
 	unsigned char* red_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
 	unsigned char* green_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
 	unsigned char* blue_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
-	/*
-	for (int i = 0; i < G_SIZE; i++) {
-		printf("%d %d %d\n", outputArray[i].red, outputArray[i].green, outputArray[i].blue);
-	}
-	*/
+
 	clEnqueueReadBuffer(queue, d_red_output, CL_TRUE, 0,
 		bihwidth * bihheight * sizeof(unsigned char), red_output, 0, NULL, NULL);
 	clEnqueueReadBuffer(queue, d_green_output, CL_TRUE, 0,
 		bihwidth * bihheight * sizeof(unsigned char), green_output, 0, NULL, NULL);
 	clEnqueueReadBuffer(queue, d_blue_output, CL_TRUE, 0,
 		bihwidth * bihheight * sizeof(unsigned char), blue_output, 0, NULL, NULL);
+	
 	/*
 	int index = 0;
 	HDC hdc;
 	hdc = GetDC(NULL);
-	for (int i = 0; i< bihheight; i++)
+	for (int i = 0; i < bihheight; i++)
 	{
 		for (int j = 0; j < bihwidth; j++)
 		{
@@ -318,6 +315,7 @@ void runKernel()
 	}
 	ReleaseDC(NULL, hdc);
 	*/
+
 	free(red_output);
 	free(green_output);
 	free(blue_output);
@@ -336,8 +334,8 @@ void CpuCal(long int size) {
 	FILE* fp_B;
 	struct Bitmapfileheader bfh;
 	struct Bitmapinfoheader bih;
-	struct Palette rgb1, rgb2;
-
+	struct Palette* rgb1;
+	struct Palette* rgb2;
 	struct Palette* outputArray;
 
 	fp_A = fopen("background.bmp", "rb");
@@ -358,37 +356,44 @@ void CpuCal(long int size) {
 	fread(&bfh, sizeof(bfh), 1, fp_A);
 	fread(&bih, sizeof(bih), 1, fp_A);
 
-	outputArray = (struct Palette*)malloc(sizeof(struct Palette) * bih.biwidth * bih.biheight);;
+	bihwidth = ((bih.biwidth + 3) / 4) * 4;
+	bihheight = bih.biheight;
 
-	for (int i = 0; i < bih.biheight * bih.biwidth; i++)
-	{	
-		fread(&rgb1, 3, 1, fp_A);
-		fread(&rgb2, 3, 1, fp_B);
+	rgb1 = (struct Palette*)malloc(sizeof(struct Palette) * bihwidth * bihheight);
+	rgb2 = (struct Palette*)malloc(sizeof(struct Palette) * bihwidth * bihheight);
+	outputArray = (struct Palette*)malloc(sizeof(struct Palette) * bihwidth * bihheight);
+
+	for (int i = 0; i < bihwidth * bihheight; i++)
+	{
+		fread(&rgb1[i], 4, 1, fp_A);
+		fread(&rgb2[i], 4, 1, fp_B);
 	}
 
 	for (int i = 0; i < size; i++) {
-		for (int i = 0; i < bih.biheight * bih.biwidth; i++)
+		for (int i = 0; i < bihwidth * bihheight; i++)
 		{
-			outputArray[i].red = (rgb1.red * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.red * (i + 1) / bih.biheight * bih.biwidth);
-			outputArray[i].green = (rgb1.green * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.green * (i + 1) / bih.biheight * bih.biwidth);
-			outputArray[i].blue = (rgb1.blue * (i + 1) / bih.biheight * bih.biwidth) + (rgb2.blue * (i + 1) / bih.biheight * bih.biwidth);
+			outputArray[i].red = (rgb1[i].red * i / (bihwidth * bihheight)) + (rgb2[i].red * i / (bihwidth * bihheight));
+			outputArray[i].green = (rgb1[i].green * i / (bihwidth * bihheight)) + (rgb2[i].green * i / (bihwidth * bihheight));
+			outputArray[i].blue = (rgb1[i].blue * i / (bihwidth * bihheight)) + (rgb2[i].blue * i / (bihwidth * bihheight));
 		}
 	}
+
 	/*
 	int index = 0;
-	HDC hdc, hdc_tmp;
+	HDC hdc;
 	hdc = GetDC(NULL);
-	for (int i = 0; i< bih.biheight; i++)
+	for (int i = 0; i< bihheight; i++)
 	{
-		for (int j = 0; j<bih.biwidth; j++)
+		for (int j = 0; j < bihwidth; j++)
 		{
-			SetPixel(hdc, j, bih.biheight - i - 1, RGB(outputArray[index].red, outputArray[index].green, outputArray[index].blue));
+			SetPixel(hdc, j, bihheight - i - 1, RGB(outputArray[index].red, outputArray[index].green, outputArray[index].blue));
 			index++;
 		}
 	}
 	ReleaseDC(NULL, hdc);
 	*/
-
+	free(rgb1);
+	free(rgb2);
 	free(outputArray);
 
 	fclose(fp_A);
