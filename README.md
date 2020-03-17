@@ -81,3 +81,7 @@ Local workgorup size를 NULL 로 입력해주면 OpenCL이 알아서 실행하�
 총연산 유닛(compute unit)이 32개 라면 64(PE)*32(CU) = 2048 개가 동시에 처리되고 2048*4 = 8192 개 의 work-item이 스위칭되면서 실행된다. 
 
 이때 work-item들이 메모리에 동시에 접근할때 대역폭 정보 등까지 고려되어야 성능 향상에 대한 이해와 최적화를 할 수 있다.
+
+# kernel의 개념
+- '커널'은 일종의 OS 이다. 어떤 OS냐고 하면, OpenCL에 의해서 CPU나 GPU에서 실행되게 되는 작은 OS라고 보면된다. 이것을 OpenCL 규약 문서식 표현을 쓰면 'OpenCL 장치에서 구동되는 OpenCL 함수' 이다. 즉, OpenCL에 의해서 돌아가는 프로그램 그 자체인 셈. 
+- OpenGL이나 DirectX로 치면 쉐이더 코드 같은 개념이라 보면 된다. 결과적으로는 OpenCL에서 실제적으로 수행하게 될 프로그램인 셈이다.
