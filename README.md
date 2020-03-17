@@ -62,3 +62,22 @@ kernel에서 barrier() 함수를 이용한다.
 - global memory에 대한 consistency 보장 : barrier(CLK_GLOBAL_MEM_FENCE)
 서로 다른 work-group 간의 동기화는 지원하지 않는다.
 work-group 안의 모든 work-item이 barrier()를 실행하거나, 전체가 실행하지 않아야 한다.(if문 분기점 조심할 것)
+
+# work-group 사이즈 결정
+OpenCL을 사용하여 워크그룹 사이즈(CUDA에서는 Dimension, block, thread)를 결정해야 할때 Global workgorup size 는 해결하고자 하는 총 문제수를 커버 해야한다. 
+
+즉, 1024 x 1024 행렬이 있다면 커맨드큐에 NDRagneKernel을 할때 global workgroup size는 1024 x 1024 = 1048576 이 된다.
+
+Local workgorup size를 NULL 로 입력해주면 OpenCL이 알아서 실행하여 준다.
+
+하지만 성능향상을 위해서는 local workgorup size를 수동으로 넣어주어야 할때가 있다.
+
+연산장치(GPU 또는 기타장치)의 프로필을 보면 Max work group size 정보를 알 수 있다.
+
+예를 들어 Max work group size 가 256 이었다면 local work group size는 모든 Dimenstion을 곱했을때 256 보다 같거나 작아야 한다.
+
+저 256이라는 숫자는 보통 FrontWave(CUDA에서는 WARP) 에 의해서 결정되는데 Hardware 적으로 context switching 할 수 있는 총 그룹수와 PE(processing element) 수에 의해 결정된다. PE가 64개 이고 FraoneWawe가 4이면 256이기 때문에 local workgorup 에서 처리할수 있는 work item 갯수는 256개가 된다.
+
+총연산 유닛(compute unit)이 32개 라면 64(PE)*32(CU) = 2048 개가 동시에 처리되고 2048*4 = 8192 개 의 work-item이 스위칭되면서 실행된다. 
+
+이때 work-item들이 메모리에 동시에 접근할때 대역폭 정보 등까지 고려되어야 성능 향상에 대한 이해와 최적화를 할 수 있다.
