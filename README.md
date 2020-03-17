@@ -44,6 +44,7 @@ kernel 함수에서 할당해야 한다.
 - kernel 함수에서 __local 포인터를 인자로 받는다.
 - sizeof(int) * 64 = 256Byte로 할당해야 한다.
 - 할당과 동시에 초기화를 할 수 없다. kernel 실행 중에 따로 초기화를 해주어야 한다.(global memory변수는 선언과 동시에 초기화를 해주어야 한다.)
+
 Global memory의 캐시(cache) 역할을 한다.
 - global memory의 같은 위치를 여러 work-item이 읽을 경우 처음 한 번만 읽어서 local memory에 저장한다.
 
