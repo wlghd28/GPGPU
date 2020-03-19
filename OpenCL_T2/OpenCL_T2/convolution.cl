@@ -10,8 +10,8 @@ void simpleKernel(
 	__global unsigned char* red_output,
 	__global unsigned char* green_output,
 	__global unsigned char* blue_output,
-	long int per,
-	long int size
+	int per,
+	int size
 )
 {	
 
@@ -21,8 +21,8 @@ void simpleKernel(
 	uint globalCol = get_global_id(0);
 	uint dstIndex = globalRow * dstYStride + globalCol * dstXStride;
 
-	red_output[dstIndex] = (red[dstIndex] * per / size);
-	green_output[dstIndex] = (green[dstIndex] * per / size);
-	blue_output[dstIndex] = (blue[dstIndex] * per / size);
+	red_output[dstIndex] = red[dstIndex] * per / size;
+	green_output[dstIndex] = green[dstIndex] * per / size;
+	blue_output[dstIndex] = blue[dstIndex] * per / size;
 
 }

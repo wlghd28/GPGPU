@@ -25,16 +25,26 @@ struct Bitmapinfoheader
 	int compression, sizeimage, xpelspermeter, ypelspermeter, biclrused, biclrimportant;
 }bih;
 struct Palette {
-	unsigned char alpha;
+	//unsigned char alpha;
 	unsigned char blue;
 	unsigned char green;
 	unsigned char red;
 }rgb;
 #pragma pack(pop)	
 
+BITMAPFILEHEADER new_background_bfh;
+BITMAPINFOHEADER new_background_bih;
+
+struct Palette* rgbpix;
+
+unsigned char* red_output;
+unsigned char* green_output;
+unsigned char* blue_output;
 
 int bihwidth;		// 이미지 가로 사이즈
 int bihheight;		// 이미지 세로 사이즈 (line 수)
+
+void Draw();		// 연산된 RGB값을 화면에 출력하는 함수.
 
 // kernel을 읽어서 char pointer생성
 char* readSource(char* kernelPath) {
@@ -180,24 +190,6 @@ void CLInit()
 void bufferWrite()
 {
 
-	FILE * fp;
-	struct Bitmapfileheader bfh;
-	struct Bitmapinfoheader bih;
-	struct Palette rgb;
-
-	fp = fopen("background.bmp", "rb");
-	if (fp == NULL)
-	{
-		printf("file not found");
-		getchar();
-		exit(0);
-	}
-	fread(&bfh, sizeof(bfh), 1, fp);
-	fread(&bih, sizeof(bfh), 1, fp);
-
-	bihwidth = ((bih.biwidth + 3) / 4) * 4;
-	bihheight = bih.biheight;
-
 	// 메모리 버퍼 생성
 	d_red = clCreateBuffer(context, CL_MEM_READ_ONLY,
 		bihwidth * bihheight * sizeof(unsigned char), NULL, NULL);
@@ -218,12 +210,11 @@ void bufferWrite()
 	unsigned char* blue = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
 	
 	for (int i = 0; i < bihwidth * bihheight; i++) {
-		fread(&rgb, 4, 1, fp);
-		red[i] = rgb.red;
-		green[i] = rgb.green;
-		blue[i] = rgb.blue;
+		red[i] = rgbpix[i].red;
+		green[i] = rgbpix[i].green;
+		blue[i] = rgbpix[i].blue;
+		//printf("%d %d %d\n", red[i], green[i], blue[i]);
 	}
-
 
 	clEnqueueWriteBuffer(queue, d_red, CL_TRUE, 0, sizeof(unsigned char) * bihwidth * bihheight,
 		red, 0, NULL, NULL);
@@ -236,11 +227,9 @@ void bufferWrite()
 	free(green);
 	free(blue);
 
-	fclose(fp);
-
 }
 
-void runKernel(long int per, long int size)
+void runKernel(int per, int size)
 {
 	int totalWorkItemsX = bihwidth * bihheight;
 	int totalWorkItemsY = 1;
@@ -258,17 +247,14 @@ void runKernel(long int per, long int size)
 	clSetKernelArg(simpleKernel, 4, sizeof(cl_mem), &d_green_output);
 	clSetKernelArg(simpleKernel, 5, sizeof(cl_mem), &d_blue_output);
 
-	clSetKernelArg(simpleKernel, 6, sizeof(long int), &per);
-	clSetKernelArg(simpleKernel, 7, sizeof(long int), &size);
+	clSetKernelArg(simpleKernel, 6, sizeof(int), &per);
+	clSetKernelArg(simpleKernel, 7, sizeof(int), &size);
+
 	clEnqueueNDRangeKernel(queue, simpleKernel, 2, NULL, globalSize,
 		NULL, 0, NULL, NULL);
 	// 완료 대기 
 	clFinish(queue);
 	
-
-	unsigned char* red_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
-	unsigned char* green_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
-	unsigned char* blue_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
 
 	clEnqueueReadBuffer(queue, d_red_output, CL_TRUE, 0,
 		bihwidth * bihheight * sizeof(unsigned char), red_output, 0, NULL, NULL);
@@ -276,27 +262,9 @@ void runKernel(long int per, long int size)
 		bihwidth * bihheight * sizeof(unsigned char), green_output, 0, NULL, NULL);
 	clEnqueueReadBuffer(queue, d_blue_output, CL_TRUE, 0,
 		bihwidth * bihheight * sizeof(unsigned char), blue_output, 0, NULL, NULL);
-	
-	/*
-	int index = 0;
-	HDC hdc;
-	hdc = GetDC(NULL);
-	for (int i = 0; i < bihheight; i++)
-	{
-		for (int j = 0; j < bihwidth; j++)
-		{
-			SetPixel(hdc, j, bihheight - i - 1, RGB(red_output[index], green_output[index], blue_output[index]));
-			index++;
-		}
-	}
-	ReleaseDC(NULL, hdc);
-	*/
 
-	free(red_output);
-	free(green_output);
-	free(blue_output);
+
 }
-
 void Release()
 {
 	// 릴리즈
@@ -304,16 +272,46 @@ void Release()
 	clReleaseCommandQueue(queue);
 	clReleaseContext(context);
 }
-void CpuCal(long int size) {
+void CpuCal(int size) {
 
-	FILE* fp;
-	struct Bitmapfileheader bfh;
-	struct Bitmapinfoheader bih;
-	struct Palette* rgb;
-	struct Palette* outputArray;
+	for (int i = 0; i < size; i++) {
+		for (int j = 0; j < bihwidth * bihheight; j++) {
+			red_output[j] = (rgbpix[j].red * i / size);
+			green_output[j] = (rgbpix[j].green * i / size);
+			blue_output[j] = (rgbpix[j].blue * i / size);
+		}
+		Draw();
+	}
 
-	fp = fopen("background.bmp", "rb");
+}
+// 연산된 RGB 값을 화면에 출력시킨다.
+void Draw()
+{
+	struct Palette* pal = (struct Palette*)malloc(sizeof(struct Palette) * bihwidth * bihheight);
+	HDC hdc;
+	hdc = GetDC(NULL);
 
+	for (int i = 0; i < bihwidth * bihheight; i++)
+	{
+		pal[i].red = red_output[i];
+		pal[i].green = green_output[i];
+		pal[i].blue = blue_output[i];
+	}
+
+	SetDIBitsToDevice(hdc, 0, 0, bihwidth, bihheight, 0, 0, 0, bihheight,
+		(BYTE *)pal, (const BITMAPINFO *)&new_background_bih, DIB_RGB_COLORS);
+
+	ReleaseDC(NULL, hdc);
+	free(pal);
+
+}
+
+int main(int argc, char** argv) {
+
+	FILE * fp;
+	// RGB 픽셀값 메모리 할당
+
+	fp = fopen("background.dib", "rb");
 	if (fp == NULL)
 	{
 		printf("file not found");
@@ -321,70 +319,44 @@ void CpuCal(long int size) {
 		exit(0);
 	}
 
-	fread(&bfh, sizeof(bfh), 1, fp);
-	fread(&bih, sizeof(bih), 1, fp);
 
-	bihwidth = ((bih.biwidth + 3) / 4) * 4;
-	bihheight = bih.biheight;
+	fread(&new_background_bfh, sizeof(BITMAPFILEHEADER), 1, fp);
+	fread(&new_background_bih, sizeof(BITMAPINFOHEADER), 1, fp);
 
-	rgb = (struct Palette*)malloc(sizeof(struct Palette) * bihwidth * bihheight);
-	outputArray = (struct Palette*)malloc(sizeof(struct Palette) * bihwidth * bihheight);
+	bihwidth = new_background_bih.biWidth;
+	bihheight = new_background_bih.biHeight;
+	rgbpix = (struct Palette*)malloc(sizeof(struct Palette) * bihwidth * bihheight);
 
 	for (int i = 0; i < bihwidth * bihheight; i++)
 	{
-		fread(&rgb[i], 4, 1, fp);
+		fread(&rgbpix[i], 3, 1, fp);
 	}
+	red_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
+	green_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
+	blue_output = (unsigned char*)malloc(sizeof(unsigned char) * bihwidth * bihheight);
 
-	for (int i = 0; i < size; i++) {
-		for (int j = 0; j < bihwidth * bihheight; j++) {
-			outputArray[j].red = (rgb[j].red * i / size);
-			outputArray[j].green = (rgb[j].green * i / size);
-			outputArray[j].blue = (rgb[j].blue * i / size);
-		}
-	}
-
-	/*
-	int index = 0;
-	HDC hdc;
-	hdc = GetDC(NULL);
-	for (int i = 0; i< bihheight; i++)
-	{
-		for (int j = 0; j < bihwidth; j++)
-		{
-			SetPixel(hdc, j, bihheight - i - 1, RGB(outputArray[index].red, outputArray[index].green, outputArray[index].blue));
-			index++;
-		}
-	}
-	ReleaseDC(NULL, hdc);
-	*/
-
-	free(rgb);
-	free(outputArray);
-
-	fclose(fp);
-}
-
-int main(int argc, char** argv) {
-
-	long int data_size;	// 데이터 양 변수
-	long int i = 0;		// 반복문 변수
+	int data_size;	// 데이터 양 변수
+	int i = 0;		// 반복문 변수
 
 	printf("실험할 데이터 량 입력 : ");
 	scanf("%d", &data_size);
 
+
+	// GPU 연산
 	QueryPerformanceFrequency(&tot_clockFreq);
 
 	// OpenCL 디바이스, 커널 셋업
 	CLInit();
-	
+
 	QueryPerformanceCounter(&tot_beginClock); //시간측정 시작
 
-	//디바이스 쪽 버퍼 생성 및 write								 
+	// 디바이스 쪽 버퍼 생성 및 write								 
 	bufferWrite();
 
 	for (i = 0; i < data_size; i++) {
 		//커널 실행
 		runKernel(i, data_size);
+		Draw();
 	}
 
 	QueryPerformanceCounter(&tot_endClock);
@@ -394,16 +366,23 @@ int main(int argc, char** argv) {
 	Release();
 
 	printf("\n");
-
+	system("pause");
+	
 	// CPU 연산
 	QueryPerformanceCounter(&tot_beginClock); //시간측정 시작
 
-	//CPU 연산
 	CpuCal(data_size);
 
 	QueryPerformanceCounter(&tot_endClock);
 	double totalTime2 = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 	printf("Total processing Time_CPU : %f ms\n", totalTime2 * 1000);
+	
+	free(rgbpix);
+	free(red_output);
+	free(green_output);
+	free(blue_output);
+
+	fclose(fp);
 
 	return 0;
 }

@@ -1,4 +1,4 @@
-Using build options:  -I "C:\Users\mycom\Desktop\회사업무\OpenCL_T2\OpenCL_T2"
+Using build options:  -I "C:\Users\mycom\Desktop\회사업무\GPGPU_프로젝트\OpenCL_T2\OpenCL_T2"
 Setting target instruction set architecture to: Default (Intel(R) Advanced Vector Extensions 2 (Intel(R) AVX2))
 Platform name: Intel(R) OpenCL
 Device name: Intel(R) Core(TM) i7-4510U CPU @ 2.00GHz
