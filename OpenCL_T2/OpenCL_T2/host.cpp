@@ -45,12 +45,12 @@ int bihwidth;		// 이미지 가로 사이즈
 int bihheight;		// 이미지 세로 사이즈 (line 수)
 
 
-double total_Time;			// GPU와 CPU의 연산 측정 시간
+double total_Time_CPU;			// CPU의 연산 측정 시간
+double total_Time_GPU;			// GPU의 연산 측정 시간
 double tmp_Time = 0;			// 출력 시간을 제외 시키기 위해 쓰는 임시 변수
 
 
 void Draw();		// 연산된 RGB값을 화면에 출력하는 함수.
-void CalTime();		// 측정된 시간을 계산하는 함수.
 
 // kernel을 읽어서 char pointer생성
 char* readSource(char* kernelPath) {
@@ -288,7 +288,8 @@ void CpuCal(int size) {
 			blue_output[j] = (rgbpix[j].blue * i / size);
 		}
 		QueryPerformanceCounter(&tot_endClock);
-		CalTime();
+		tmp_Time = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
+		total_Time_CPU += tmp_Time;
 		Draw();
 	}
 
@@ -331,7 +332,7 @@ int main(int argc, char** argv) {
 
 
 	// GPU 연산을 위한 측정 시간 초기화.
-	total_Time = 0;
+	total_Time_GPU = 0;
 	// GPU 연산
 	QueryPerformanceFrequency(&tot_clockFreq);	// 시간을 측정하기위한 준비
 	// OpenCL 디바이스, 커널 셋업
@@ -342,18 +343,20 @@ int main(int argc, char** argv) {
 	// 디바이스 쪽 버퍼 생성 및 write								 
 	bufferWrite();
 	QueryPerformanceCounter(&tot_endClock);
-	CalTime();
+	tmp_Time = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
+	total_Time_GPU += tmp_Time;
 
 	for (i = 0; i < data_size; i++) {
 		QueryPerformanceCounter(&tot_beginClock); // runKernel 시간측정 시작
 		//커널 실행
 		runKernel(i, data_size);
 		QueryPerformanceCounter(&tot_endClock);
-		CalTime();
+		tmp_Time = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
+		total_Time_GPU += tmp_Time;
 		Draw();
 	}
 
-	printf("Total processing Time_GPU : %f ms\n", total_Time * 1000);
+	printf("Total processing Time_GPU : %f ms\n", total_Time_GPU * 1000);
 
 	Release();
 
@@ -362,13 +365,14 @@ int main(int argc, char** argv) {
 	
 
 	// CPU 연산을 위한 측정 시간 초기화
-	total_Time = 0;
+	total_Time_CPU = 0;
 
 	// CPU 연산
 	CpuCal(data_size);
 
-	printf("Total processing Time_CPU : %f ms\n", total_Time * 1000);
+	printf("Total processing Time_CPU : %f ms\n", total_Time_CPU * 1000);
 	
+	printf("Time_CPU/Time_GPU = %.3lf\n", (double)total_Time_CPU/total_Time_GPU);
 	free(rgbpix);
 	free(red_output);
 	free(green_output);
@@ -399,10 +403,4 @@ void Draw()
 	ReleaseDC(NULL, hdc);
 	free(pal);
 
-}
-
-void CalTime()
-{
-	tmp_Time = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
-	total_Time += tmp_Time;
 }
