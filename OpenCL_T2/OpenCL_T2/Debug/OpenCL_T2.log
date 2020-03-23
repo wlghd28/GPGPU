@@ -24,9 +24,9 @@
   Build succeeded!
   
   host.cpp
-c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(111): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(119): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(236): warning C4838: 'int'에서 '::size_t'(으)로의 변환에는 축소 변환이 필요합니다.
+c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(118): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(126): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(243): warning C4838: 'int'에서 '::size_t'(으)로의 변환에는 축소 변환이 필요합니다.
   OpenCL_T2.vcxproj -> C:\Users\mycom\Desktop\회사업무\GPGPU_프로젝트\OpenCL_T2\Debug\OpenCL_T2.exe
   convolution.cl
           1개 파일이 복사되었습니다.
