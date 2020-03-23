@@ -28,7 +28,9 @@ c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.
 c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(126): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
 c:\users\mycom\desktop\회사업무\gpgpu_프로젝트\opencl_t2\opencl_t2\host.cpp(243): warning C4838: 'int'에서 '::size_t'(으)로의 변환에는 축소 변환이 필요합니다.
   코드를 생성하고 있습니다.
-  All 16 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
+  1 of 16 functions ( 6.3%) were compiled, the rest were copied from previous compilation.
+    0 functions were new in current compilation
+    0 functions had inline decision re-evaluated but remain unchanged
   코드를 생성했습니다.
   OpenCL_T2.vcxproj -> C:\Users\mycom\Desktop\회사업무\GPGPU_프로젝트\OpenCL_T2\Release\OpenCL_T2.exe
   convolution.cl

@@ -376,6 +376,7 @@ int main(int argc, char** argv) {
 
 	fclose(fp);
 
+	system("pause");
 	return 0;
 }
 // 연산된 RGB 값을 화면에 출력시킨다.
