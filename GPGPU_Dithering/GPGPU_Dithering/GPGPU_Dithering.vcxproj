@@ -191,9 +191,6 @@
   <ItemGroup>
     <ClInclude Include="deviceInfo.h" />
   </ItemGroup>
-  <ItemGroup>
-    <Intel_OpenCL_Build_Rules Include="dithering.cl" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
     <Import Project="$(INTELOCLSDKROOT)\BuildCustomizations\IntelOpenCL.targets" />

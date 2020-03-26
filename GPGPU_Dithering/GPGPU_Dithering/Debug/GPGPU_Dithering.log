@@ -1,2 +1,7 @@
-﻿  Preprocessing: dithering.cl
-C:\Program Files (x86)\IntelSWTools\system_studio_2020\OpenCL\sdk\BuildCustomizations\IntelOpenCL.targets(49,5): error MSB3721: ""C:\Program Files (x86)\IntelSWTools\system_studio_2020\OpenCL\sdk\bin\x86\ioc32.exe" -cmd=build -input="D:\지홍\GPGPU_Dithering\GPGPU_Dithering\dithering.cl" -output="Debug\dithering.out" -VS -device=CPU  -targetos=current            -bo="           "" 명령이 종료되었습니다(코드: -1073741511).
+﻿  host.cpp
+c:\users\aaa\gpgpu\gpgpu_dithering\gpgpu_dithering\host.cpp(145): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+c:\users\aaa\gpgpu\gpgpu_dithering\gpgpu_dithering\host.cpp(153): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+c:\users\aaa\gpgpu\gpgpu_dithering\gpgpu_dithering\host.cpp(243): warning C4838: 'int'에서 'size_t'(으)로의 변환에는 축소 변환이 필요합니다.
+  GPGPU_Dithering.vcxproj -> C:\Users\AAA\GPGPU\GPGPU_Dithering\Debug\GPGPU_Dithering.exe
+  dithering.cl
+          1개 파일이 복사되었습니다.

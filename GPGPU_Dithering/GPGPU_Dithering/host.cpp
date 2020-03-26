@@ -11,10 +11,10 @@ int * output;
 char* readSource(char* kernelPath);
 void CLInit();
 void bufferWrite();
-void runKernel();
+void runKernel(int quant_err);
 void Release();
 
-void CpuCal();
+void CpuCal(int quant_err);
 
 int main(int argc, char** argv) {
 
@@ -25,6 +25,17 @@ int main(int argc, char** argv) {
 	memset(di_num, 0, sizeof(int) * 4);
 	memset(output, 0, sizeof(int) * 4);
 
+	err[0] = 155;
+	err[1] = 255;
+	err[2] = 136;
+	err[3] = 187;
+
+	// floyd steinberg 알고리즘 연산 숫자 ( 7, 3, 5 ,1 )
+	di_num[0] = 7;
+	di_num[1] = 3;
+	di_num[2] = 5;
+	di_num[3] = 1;
+
 	// GPU 연산을 위한 측정 시간 초기화.
 	total_Time_GPU = 0;
 	// GPU 연산
@@ -33,9 +44,9 @@ int main(int argc, char** argv) {
 	CLInit();
 
 
-	QueryPerformanceCounter(&tot_beginClock); // 시간측정 시작
 	// 디바이스 쪽 버퍼 생성 및 write								 
 	bufferWrite();
+	QueryPerformanceCounter(&tot_beginClock); // 시간측정 시작
 	//커널 실행
 	runKernel(157);
 	QueryPerformanceCounter(&tot_endClock);
@@ -217,16 +228,6 @@ void bufferWrite()
 	d_di_num = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		4 * sizeof(int), NULL, NULL);
 
-	err[0] = 155;
-	err[1] = 255;
-	err[2] = 136;
-	err[3] = 187;
-
-	// floyd steinberg 알고리즘 연산 숫자 ( 7, 3, 5 ,1 )
-	di_num[0] = 7;
-	di_num[1] = 3;
-	di_num[2] = 5;
-	di_num[3] = 1;
 
 	clEnqueueWriteBuffer(queue, d_err, CL_TRUE, 0, 4 * sizeof(int),
 		err, 0, NULL, NULL);
