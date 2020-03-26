@@ -1,0 +1,2 @@
+﻿  Preprocessing: dithering.cl
+C:\Program Files (x86)\IntelSWTools\system_studio_2020\OpenCL\sdk\BuildCustomizations\IntelOpenCL.targets(49,5): error MSB3721: ""C:\Program Files (x86)\IntelSWTools\system_studio_2020\OpenCL\sdk\bin\x86\ioc32.exe" -cmd=build -input="D:\지홍\GPGPU_Dithering\GPGPU_Dithering\dithering.cl" -output="Debug\dithering.out" -VS -device=CPU  -targetos=current            -bo="           "" 명령이 종료되었습니다(코드: -1073741511).
