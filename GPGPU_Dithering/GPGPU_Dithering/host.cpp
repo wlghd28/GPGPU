@@ -4,37 +4,64 @@
 #pragma warning(disable : 4996)
 
 double total_Time_GPU, total_Time_CPU, tmp_time;
-int * err;
-int * di_num;
-int * output;
+
+BITMAPFILEHEADER bfh;
+BITMAPINFOHEADER bih;
+
+RGBQUAD* rgb;
+unsigned char* pix;
+int * pixE;
+int quant_error;
+int bpl;
+
+unsigned char* pix_output;
+int* pixE_1;
+int* pixE_2;
+int* pixE_3;
+int* pixE_4;
+
 
 char* readSource(char* kernelPath);
 void CLInit();
 void bufferWrite();
-void runKernel(int quant_err);
+void runKernel();
 void Release();
 
-void CpuCal(int quant_err);
-
+void CpuCal();
+void FwriteCPU();
+void FwriteGPU();
 int main(int argc, char** argv) {
 
-	err = (int *)malloc(sizeof(int) * 4);
-	di_num = (int *)malloc(sizeof(int) * 4);
-	output = (int *)malloc(sizeof(int) * 4);
-	memset(err, 0, sizeof(int) * 4);
-	memset(di_num, 0, sizeof(int) * 4);
-	memset(output, 0, sizeof(int) * 4);
+	FILE * fp;
+	fp = fopen("EDIMAGE.bmp", "rb");
 
-	err[0] = 155;
-	err[1] = 255;
-	err[2] = 136;
-	err[3] = 187;
+	fread(&bfh, sizeof(bfh), 1, fp);
+	fread(&bih, sizeof(bih), 1, fp);
 
-	// floyd steinberg 알고리즘 연산 숫자 ( 7, 3, 5 ,1 )
-	di_num[0] = 7;
-	di_num[1] = 3;
-	di_num[2] = 5;
-	di_num[3] = 1;
+	rgb = (RGBQUAD*)malloc(sizeof(RGBQUAD) * 256);
+	fread(rgb, sizeof(RGBQUAD), 256, fp);
+	// BPL을 맞춰주기 위해서 픽셀데이터의 사이즈를 4의 배수로 조정
+	bpl = (bih.biWidth + 3) / 4 * 4;
+
+	pix = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bih.biHeight);
+	memset(pix, 0, sizeof(unsigned char) * bpl * bih.biHeight);
+	fread(pix, sizeof(unsigned char), bpl * bih.biHeight, fp);
+
+	pix_output = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bih.biHeight);
+	memcpy(pix_output, pix, sizeof(unsigned char) * bpl * bih.biHeight);
+
+	pixE = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
+	memset(pixE, 0, sizeof(int) * bpl * bih.biHeight);
+	pixE_1 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
+	memset(pixE_1, 0, sizeof(int) * bpl * bih.biHeight);
+	pixE_2 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
+	memset(pixE_2, 0, sizeof(int) * bpl * bih.biHeight);
+	pixE_3 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
+	memset(pixE_3, 0, sizeof(int) * bpl * bih.biHeight);
+	pixE_4 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
+	memset(pixE_4, 0, sizeof(int) * bpl * bih.biHeight);
+
+
 
 	// GPU 연산을 위한 측정 시간 초기화.
 	total_Time_GPU = 0;
@@ -44,11 +71,11 @@ int main(int argc, char** argv) {
 	CLInit();
 
 
+	QueryPerformanceCounter(&tot_beginClock); // 시간측정 시작
 	// 디바이스 쪽 버퍼 생성 및 write								 
 	bufferWrite();
-	QueryPerformanceCounter(&tot_beginClock); // 시간측정 시작
 	//커널 실행
-	runKernel(157);
+	runKernel();
 	QueryPerformanceCounter(&tot_endClock);
 	total_Time_GPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 		
@@ -59,24 +86,37 @@ int main(int argc, char** argv) {
 	printf("\n");
 	system("pause");
 
+	FwriteGPU();
 
 	// CPU 연산을 위한 측정 시간 초기화
 	total_Time_CPU = 0;
 	QueryPerformanceCounter(&tot_beginClock); // 시간측정 시작
 	// CPU 연산
-	CpuCal(157);
+	CpuCal();
 	QueryPerformanceCounter(&tot_endClock);
 	total_Time_CPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 	printf("Total processing Time_CPU : %f ms\n", total_Time_CPU * 1000);
 
 	printf("Time_CPU/Time_GPU = %.3lf\n", (double)total_Time_CPU / total_Time_GPU);
 
-
 	system("pause");
 
-	free(err);
-	free(di_num);
-	free(output);
+	FwriteCPU();
+
+
+
+	free(rgb);
+
+	free(pix);
+	free(pix_output);
+
+	free(pixE);
+	free(pixE_1);
+	free(pixE_2);
+	free(pixE_3);
+	free(pixE_4);
+
+	fclose(fp);
 
 	return 0;
 }
@@ -223,21 +263,35 @@ void bufferWrite()
 {
 
 	// 메모리 버퍼 생성
-	d_err = clCreateBuffer(context, CL_MEM_READ_ONLY,
-		4 * sizeof(int), NULL, NULL);
-	d_di_num = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		4 * sizeof(int), NULL, NULL);
+	d_pix = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		bpl * bih.biHeight * sizeof(unsigned char), NULL, NULL);
+	d_pixE_1 = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		bpl * bih.biHeight * sizeof(int), NULL, NULL);
+	d_pixE_2 = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		bpl * bih.biHeight * sizeof(int), NULL, NULL);
+	d_pixE_3 = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		bpl * bih.biHeight * sizeof(int), NULL, NULL);
+	d_pixE_4 = clCreateBuffer(context, CL_MEM_READ_WRITE,
+		bpl * bih.biHeight * sizeof(int), NULL, NULL);
 
 
-	clEnqueueWriteBuffer(queue, d_err, CL_TRUE, 0, 4 * sizeof(int),
-		err, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_di_num, CL_TRUE, 0, 4 * sizeof(int),
-		di_num, 0, NULL, NULL);
+
+	clEnqueueWriteBuffer(queue, d_pix, CL_TRUE, 0, bpl * bih.biHeight * sizeof(unsigned char),
+		pix_output, 0, NULL, NULL);
+	clEnqueueWriteBuffer(queue, d_pixE_1, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
+		pixE_1, 0, NULL, NULL);
+	clEnqueueWriteBuffer(queue, d_pixE_2, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
+		pixE_2, 0, NULL, NULL);
+	clEnqueueWriteBuffer(queue, d_pixE_3, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
+		pixE_3, 0, NULL, NULL);
+	clEnqueueWriteBuffer(queue, d_pixE_4, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
+		pixE_4, 0, NULL, NULL);
 
 }
-void runKernel(int quant_err)
+
+void runKernel()
 {
-	int totalWorkItemsX = 4;
+	int totalWorkItemsX = bpl * bih.biHeight;
 	int totalWorkItemsY = 1;
 
 	size_t globalSize[2] = { totalWorkItemsX, totalWorkItemsY };
@@ -245,9 +299,11 @@ void runKernel(int quant_err)
 
 
 	// 커널 매개변수 설정 
-	clSetKernelArg(simpleKernel, 0, sizeof(cl_mem), &d_err);
-	clSetKernelArg(simpleKernel, 1, sizeof(int), &quant_err);
-	clSetKernelArg(simpleKernel, 2, sizeof(cl_mem), &d_di_num);
+	clSetKernelArg(simpleKernel, 0, sizeof(cl_mem), &d_pix);
+	clSetKernelArg(simpleKernel, 1, sizeof(cl_mem), &d_pixE_1);
+	clSetKernelArg(simpleKernel, 2, sizeof(cl_mem), &d_pixE_2);
+	clSetKernelArg(simpleKernel, 3, sizeof(cl_mem), &d_pixE_3);
+	clSetKernelArg(simpleKernel, 4, sizeof(cl_mem), &d_pixE_4);
 
 	clEnqueueNDRangeKernel(queue, simpleKernel, 2, NULL, globalSize,
 		NULL, 0, NULL, NULL);
@@ -255,10 +311,36 @@ void runKernel(int quant_err)
 	clFinish(queue);
 
 
-	clEnqueueReadBuffer(queue, d_err, CL_TRUE, 0,
-		4 * sizeof(int), output, 0, NULL, NULL);
+	clEnqueueReadBuffer(queue, d_pix, CL_TRUE, 0,
+		bpl * bih.biHeight * sizeof(unsigned char), pix_output, 0, NULL, NULL);
+	clEnqueueReadBuffer(queue, d_pixE_1, CL_TRUE, 0,
+		bpl * bih.biHeight * sizeof(int), pixE_1, 0, NULL, NULL);
+	clEnqueueReadBuffer(queue, d_pixE_2, CL_TRUE, 0,
+		bpl * bih.biHeight * sizeof(int), pixE_2, 0, NULL, NULL);
+	clEnqueueReadBuffer(queue, d_pixE_3, CL_TRUE, 0,
+		bpl * bih.biHeight * sizeof(int), pixE_3, 0, NULL, NULL);
+	clEnqueueReadBuffer(queue, d_pixE_4, CL_TRUE, 0,
+		bpl * bih.biHeight * sizeof(int), pixE_4, 0, NULL, NULL);
 
+	/*
+	for (int y = 1; y < bih.biHeight - 1; y++)
+	{
+		for (int x = 1; x < bpl - 1; x++)
+		{
+			pixE_1[y * bpl + x] += pix_output[y * bpl + x + 1];
+			pixE_2[y * bpl + x] += pix_output[(y + 1) * bpl + x - 1];
+			pixE_3[y * bpl + x] += pix_output[(y + 1) * bpl + x];
+			pixE_4[y * bpl + x] += pix_output[(y + 1) * bpl + x + 1];
+
+			pix_output[y * bpl + x + 1] = pixE_1[y * bpl + x] / 128 * 255;
+			pix_output[(y + 1) * bpl + x - 1] = pixE_2[y * bpl + x] / 128 * 255;
+			pix_output[(y + 1) * bpl + x] = pixE_3[y * bpl + x] / 128 * 255;
+			pix_output[(y + 1) * bpl + x + 1] = pixE_4[y * bpl + x] / 128 * 255;
+		}
+	}
+	*/
 }
+
 void Release()
 {
 	// 릴리즈
@@ -266,10 +348,46 @@ void Release()
 	clReleaseCommandQueue(queue);
 	clReleaseContext(context);
 }
-void CpuCal(int quant_err) 
+void CpuCal() 
 {
-	for (int i = 0; i < 4; i++)
+	int quant_err = 0;
+	for (int y = 1; y < (bih.biHeight - 1); y++)
 	{
-		err[i] += quant_err * di_num[i] / 16;
+		for (int x = 1; x < (bpl - 1); x++)
+		{
+			// 병렬처리가 가능한 부분.
+			pixE[y * bpl + x] += pix[y * bpl + x];;
+			pix[y * bpl + x] = pixE[y * bpl + x] / 128 * 255;
+
+			quant_error = pixE[y * bpl + x] - pix[y * bpl + x];
+
+			pixE[y * bpl + x + 1] += quant_error * 7 / 16;
+			pixE[(y + 1) * bpl + x - 1] += quant_error * 3 / 16;
+			pixE[(y + 1) * bpl + x] += quant_error * 5 / 16;
+			pixE[(y + 1) * bpl + x - 2] += quant_error * 1 / 16;
+			// pix[y * bih.biWidth + x + 1] += pixE[y * bih.biWidth + x + 1];
+		}
 	}
+}
+void FwriteCPU()
+{
+	// 데이터 픽셀값을 bmp파일로 쓴다.
+	FILE * fp2 = fopen("new_EDIMAGE_CPU.bmp", "wb");
+	fwrite(&bfh, sizeof(bfh), 1, fp2);
+	fwrite(&bih, sizeof(bih), 1, fp2);
+	fwrite(rgb, sizeof(RGBQUAD), 256, fp2);
+
+	fwrite(pix, sizeof(unsigned char), bpl * bih.biHeight, fp2);
+	fclose(fp2);
+}
+void FwriteGPU()
+{
+	// 데이터 픽셀값을 bmp파일로 쓴다.
+	FILE * fp2 = fopen("new_EDIMAGE_GPU.bmp", "wb");
+	fwrite(&bfh, sizeof(bfh), 1, fp2);
+	fwrite(&bih, sizeof(bih), 1, fp2);
+	fwrite(rgb, sizeof(RGBQUAD), 256, fp2);
+
+	fwrite(pix_output, sizeof(unsigned char), bpl * bih.biHeight, fp2);
+	fclose(fp2);
 }

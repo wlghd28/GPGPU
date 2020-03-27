@@ -1,7 +1,7 @@
 ﻿  host.cpp
-c:\users\aaa\gpgpu\gpgpu_dithering\gpgpu_dithering\host.cpp(145): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-c:\users\aaa\gpgpu\gpgpu_dithering\gpgpu_dithering\host.cpp(153): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
-c:\users\aaa\gpgpu\gpgpu_dithering\gpgpu_dithering\host.cpp(243): warning C4838: 'int'에서 'size_t'(으)로의 변환에는 축소 변환이 필요합니다.
-  GPGPU_Dithering.vcxproj -> C:\Users\AAA\GPGPU\GPGPU_Dithering\Debug\GPGPU_Dithering.exe
+d:\지홍\gpgpu_dithering\gpgpu_dithering\host.cpp(185): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+d:\지홍\gpgpu_dithering\gpgpu_dithering\host.cpp(193): warning C4018: '<': signed 또는 unsigned가 일치하지 않습니다.
+d:\지홍\gpgpu_dithering\gpgpu_dithering\host.cpp(297): warning C4838: 'int'에서 'size_t'(으)로의 변환에는 축소 변환이 필요합니다.
+  GPGPU_Dithering.vcxproj -> D:\지홍\GPGPU_Dithering\Debug\GPGPU_Dithering.exe
   dithering.cl
           1개 파일이 복사되었습니다.
