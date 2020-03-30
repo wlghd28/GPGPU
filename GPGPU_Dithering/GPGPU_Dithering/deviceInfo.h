@@ -13,10 +13,8 @@ LARGE_INTEGER beginClock, endClock, clockFreq;
 LARGE_INTEGER tot_beginClock, tot_endClock, tot_clockFreq;
 
 cl_mem   d_pix;
-cl_mem   d_pixE_1;
-cl_mem   d_pixE_2;
-cl_mem   d_pixE_3;
-cl_mem   d_pixE_4;
+cl_mem   d_pixE;
+
 
 cl_platform_id platform;
 

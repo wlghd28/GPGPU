@@ -1,4 +1,5 @@
 // Add you host code.
+
 #include "deviceInfo.h"
 // BMP 이미지를 불러오기 위한 작업
 #pragma warning(disable : 4996)
@@ -265,27 +266,14 @@ void bufferWrite()
 	// 메모리 버퍼 생성
 	d_pix = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		bpl * bih.biHeight * sizeof(unsigned char), NULL, NULL);
-	d_pixE_1 = clCreateBuffer(context, CL_MEM_READ_WRITE,
+	d_pixE = clCreateBuffer(context, CL_MEM_READ_WRITE,
 		bpl * bih.biHeight * sizeof(int), NULL, NULL);
-	d_pixE_2 = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bpl * bih.biHeight * sizeof(int), NULL, NULL);
-	d_pixE_3 = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bpl * bih.biHeight * sizeof(int), NULL, NULL);
-	d_pixE_4 = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bpl * bih.biHeight * sizeof(int), NULL, NULL);
-
 
 
 	clEnqueueWriteBuffer(queue, d_pix, CL_TRUE, 0, bpl * bih.biHeight * sizeof(unsigned char),
 		pix_output, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_pixE_1, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
-		pixE_1, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_pixE_2, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
-		pixE_2, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_pixE_3, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
-		pixE_3, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_pixE_4, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
-		pixE_4, 0, NULL, NULL);
+	clEnqueueWriteBuffer(queue, d_pixE, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
+		pixE, 0, NULL, NULL);
 
 }
 
@@ -300,45 +288,17 @@ void runKernel()
 
 	// 커널 매개변수 설정 
 	clSetKernelArg(simpleKernel, 0, sizeof(cl_mem), &d_pix);
-	clSetKernelArg(simpleKernel, 1, sizeof(cl_mem), &d_pixE_1);
-	clSetKernelArg(simpleKernel, 2, sizeof(cl_mem), &d_pixE_2);
-	clSetKernelArg(simpleKernel, 3, sizeof(cl_mem), &d_pixE_3);
-	clSetKernelArg(simpleKernel, 4, sizeof(cl_mem), &d_pixE_4);
+	clSetKernelArg(simpleKernel, 1, sizeof(cl_mem), &d_pixE);
+	clSetKernelArg(simpleKernel, 2, sizeof(int), &bpl);
 
 	clEnqueueNDRangeKernel(queue, simpleKernel, 2, NULL, globalSize,
 		NULL, 0, NULL, NULL);
 	// 완료 대기 
 	clFinish(queue);
 
-
 	clEnqueueReadBuffer(queue, d_pix, CL_TRUE, 0,
 		bpl * bih.biHeight * sizeof(unsigned char), pix_output, 0, NULL, NULL);
-	clEnqueueReadBuffer(queue, d_pixE_1, CL_TRUE, 0,
-		bpl * bih.biHeight * sizeof(int), pixE_1, 0, NULL, NULL);
-	clEnqueueReadBuffer(queue, d_pixE_2, CL_TRUE, 0,
-		bpl * bih.biHeight * sizeof(int), pixE_2, 0, NULL, NULL);
-	clEnqueueReadBuffer(queue, d_pixE_3, CL_TRUE, 0,
-		bpl * bih.biHeight * sizeof(int), pixE_3, 0, NULL, NULL);
-	clEnqueueReadBuffer(queue, d_pixE_4, CL_TRUE, 0,
-		bpl * bih.biHeight * sizeof(int), pixE_4, 0, NULL, NULL);
 
-	/*
-	for (int y = 1; y < bih.biHeight - 1; y++)
-	{
-		for (int x = 1; x < bpl - 1; x++)
-		{
-			pixE_1[y * bpl + x] += pix_output[y * bpl + x + 1];
-			pixE_2[y * bpl + x] += pix_output[(y + 1) * bpl + x - 1];
-			pixE_3[y * bpl + x] += pix_output[(y + 1) * bpl + x];
-			pixE_4[y * bpl + x] += pix_output[(y + 1) * bpl + x + 1];
-
-			pix_output[y * bpl + x + 1] = pixE_1[y * bpl + x] / 128 * 255;
-			pix_output[(y + 1) * bpl + x - 1] = pixE_2[y * bpl + x] / 128 * 255;
-			pix_output[(y + 1) * bpl + x] = pixE_3[y * bpl + x] / 128 * 255;
-			pix_output[(y + 1) * bpl + x + 1] = pixE_4[y * bpl + x] / 128 * 255;
-		}
-	}
-	*/
 }
 
 void Release()
@@ -356,7 +316,7 @@ void CpuCal()
 		for (int x = 1; x < (bpl - 1); x++)
 		{
 			// 병렬처리가 가능한 부분.
-			pixE[y * bpl + x] += pix[y * bpl + x];;
+			pixE[y * bpl + x] += pix[y * bpl + x];
 			pix[y * bpl + x] = pixE[y * bpl + x] / 128 * 255;
 
 			quant_error = pixE[y * bpl + x] - pix[y * bpl + x];
