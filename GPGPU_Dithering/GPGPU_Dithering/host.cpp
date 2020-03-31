@@ -13,7 +13,7 @@ RGBQUAD* rgb;
 unsigned char* pix;
 int * pixE;
 int quant_error;
-int bpl;
+int bpl, bph;
 
 unsigned char* pix_output;
 int* pixE_1;
@@ -43,24 +43,17 @@ int main(int argc, char** argv) {
 	fread(rgb, sizeof(RGBQUAD), 256, fp);
 	// BPL을 맞춰주기 위해서 픽셀데이터의 사이즈를 4의 배수로 조정
 	bpl = (bih.biWidth + 3) / 4 * 4;
+	bph = (bih.biHeight + 3) / 4 * 4;
 
-	pix = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bih.biHeight);
-	memset(pix, 0, sizeof(unsigned char) * bpl * bih.biHeight);
-	fread(pix, sizeof(unsigned char), bpl * bih.biHeight, fp);
+	pix = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bph);
+	memset(pix, 0, sizeof(unsigned char) * bpl * bph);
+	fread(pix, sizeof(unsigned char), bpl * bph, fp);
 
-	pix_output = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bih.biHeight);
-	memcpy(pix_output, pix, sizeof(unsigned char) * bpl * bih.biHeight);
+	pix_output = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bph);
+	memcpy(pix_output, pix, sizeof(unsigned char) * bpl * bph);
 
-	pixE = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
-	memset(pixE, 0, sizeof(int) * bpl * bih.biHeight);
-	pixE_1 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
-	memset(pixE_1, 0, sizeof(int) * bpl * bih.biHeight);
-	pixE_2 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
-	memset(pixE_2, 0, sizeof(int) * bpl * bih.biHeight);
-	pixE_3 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
-	memset(pixE_3, 0, sizeof(int) * bpl * bih.biHeight);
-	pixE_4 = (int *)malloc(sizeof(int) * bpl * bih.biHeight);
-	memset(pixE_4, 0, sizeof(int) * bpl * bih.biHeight);
+	pixE = (int *)malloc(sizeof(int) * bpl * bph);
+	memset(pixE, 0, sizeof(int) * bpl * bph);
 
 
 
@@ -112,10 +105,6 @@ int main(int argc, char** argv) {
 	free(pix_output);
 
 	free(pixE);
-	free(pixE_1);
-	free(pixE_2);
-	free(pixE_3);
-	free(pixE_4);
 
 	fclose(fp);
 
@@ -265,22 +254,22 @@ void bufferWrite()
 
 	// 메모리 버퍼 생성
 	d_pix = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bpl * bih.biHeight * sizeof(unsigned char), NULL, NULL);
+		bpl * bph * sizeof(unsigned char), NULL, NULL);
 	d_pixE = clCreateBuffer(context, CL_MEM_READ_WRITE,
-		bpl * bih.biHeight * sizeof(int), NULL, NULL);
+		bpl * bph * sizeof(int), NULL, NULL);
 
 
-	clEnqueueWriteBuffer(queue, d_pix, CL_TRUE, 0, bpl * bih.biHeight * sizeof(unsigned char),
+	clEnqueueWriteBuffer(queue, d_pix, CL_TRUE, 0, bpl * bph * sizeof(unsigned char),
 		pix_output, 0, NULL, NULL);
-	clEnqueueWriteBuffer(queue, d_pixE, CL_TRUE, 0, bpl * bih.biHeight * sizeof(int),
+	clEnqueueWriteBuffer(queue, d_pixE, CL_TRUE, 0, bpl * bph * sizeof(int),
 		pixE, 0, NULL, NULL);
 
 }
 
 void runKernel()
 {
-	int totalWorkItemsX = bpl * bih.biHeight;
-	int totalWorkItemsY = 1;
+	int totalWorkItemsX = bpl;
+	int totalWorkItemsY = bph;
 
 	size_t globalSize[2] = { totalWorkItemsX, totalWorkItemsY };
 	//float *minVal, *maxVal;
@@ -297,7 +286,7 @@ void runKernel()
 	clFinish(queue);
 
 	clEnqueueReadBuffer(queue, d_pix, CL_TRUE, 0,
-		bpl * bih.biHeight * sizeof(unsigned char), pix_output, 0, NULL, NULL);
+		bpl * bph * sizeof(unsigned char), pix_output, 0, NULL, NULL);
 
 }
 
@@ -311,7 +300,7 @@ void Release()
 void CpuCal() 
 {
 	int quant_err = 0;
-	for (int y = 1; y < (bih.biHeight - 1); y++)
+	for (int y = 1; y < (bph - 1); y++)
 	{
 		for (int x = 1; x < (bpl - 1); x++)
 		{
@@ -325,7 +314,6 @@ void CpuCal()
 			pixE[(y + 1) * bpl + x - 1] += quant_error * 3 / 16;
 			pixE[(y + 1) * bpl + x] += quant_error * 5 / 16;
 			pixE[(y + 1) * bpl + x - 2] += quant_error * 1 / 16;
-			// pix[y * bih.biWidth + x + 1] += pixE[y * bih.biWidth + x + 1];
 		}
 	}
 }
@@ -337,7 +325,7 @@ void FwriteCPU()
 	fwrite(&bih, sizeof(bih), 1, fp2);
 	fwrite(rgb, sizeof(RGBQUAD), 256, fp2);
 
-	fwrite(pix, sizeof(unsigned char), bpl * bih.biHeight, fp2);
+	fwrite(pix, sizeof(unsigned char), bpl * bph, fp2);
 	fclose(fp2);
 }
 void FwriteGPU()
@@ -348,6 +336,6 @@ void FwriteGPU()
 	fwrite(&bih, sizeof(bih), 1, fp2);
 	fwrite(rgb, sizeof(RGBQUAD), 256, fp2);
 
-	fwrite(pix_output, sizeof(unsigned char), bpl * bih.biHeight, fp2);
+	fwrite(pix_output, sizeof(unsigned char), bpl * bph, fp2);
 	fclose(fp2);
 }

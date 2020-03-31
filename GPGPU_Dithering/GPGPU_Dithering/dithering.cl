@@ -14,18 +14,17 @@ void simpleKernel(
 	uint dstXStride = get_global_size(1);
 	uint globalRow = get_global_id(1);
 	uint globalCol = get_global_id(0);
-	uint dstIndex = globalRow * dstYStride + globalCol * dstXStride;
+	uint dstIndex = globalRow * dstYStride + globalCol;
 
-	//pix[dstIndex] = dstIndex * 100 /  (dstYStride * dstXStride);
-
-	int dev = bpl / 64;
+	int dev = 128;
 
 	// if문 조건이 문제인거 같음!!
-	if(dstIndex % dev == 0 && dstIndex % (bpl * dev) == 0)
+	if(globalRow % dev == 0 && globalCol % dev == 0 )
 	{ 
+		//pixE[dstIndex] = pix[dstIndex - 1];
 		int tmpindex;
 		int quant_err;
-		for(int y = 0; y < dev; y ++)
+		for(int y = 0; y < dev; y++)
 		{ 
 			for(int x = 0; x < dev; x++)
 			{		
@@ -43,5 +42,5 @@ void simpleKernel(
 			}
 		}
 	}
-
+	
 }

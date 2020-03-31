@@ -14,19 +14,21 @@ void simpleKernel(
 	uint dstXStride = get_global_size(1);
 	uint globalRow = get_global_id(1);
 	uint globalCol = get_global_id(0);
-	uint dstIndex = globalRow * dstYStride + globalCol * dstXStride;
+	uint dstIndex = globalRow * dstYStride + globalCol;
 
-	//int dev = (bpl / 4) * (bpl / 4);
-	//int num = 1;
-	pix[dstIndex] = 5;
+	int dev = 128;
 
-	/*
-	if((globalRow % num == 0) && (globalCol % num == 0)){ 
+	// if문 조건이 문제인거 같음!!
+	if(globalCol == 1 || globalCol != 0 && globalRow % dev == 0 && globalCol % dev == 0 )
+	{ 
+		//pixE[dstIndex] = pix[dstIndex - 1];
 		int tmpindex;
 		int quant_err;
-		for(int y = 0; y < num; y ++){ 
-			for(int x = 0; x < num; x++){		
-				tmpindex = dstIndex + bpl * y + x; 
+		for(int y = 0; y < dev; y++)
+		{ 
+			for(int x = 0; x < dev; x++)
+			{		
+				tmpindex =  dstIndex + bpl * y + x; 
 				// 병렬처리가 가능한 부분.
 				pixE[tmpindex] += pix[tmpindex];
 				pix[tmpindex] = pixE[tmpindex] / 128 * 255;
@@ -40,5 +42,5 @@ void simpleKernel(
 			}
 		}
 	}
-	*/
+	
 }
