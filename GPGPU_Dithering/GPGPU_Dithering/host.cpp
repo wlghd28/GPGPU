@@ -11,7 +11,7 @@ BITMAPINFOHEADER bih;
 RGBQUAD* rgb;
 
 int quant_error;
-int bpl, bph;
+int bpl, bph, div_bpl, div_bph;
 
 unsigned char* pix;
 int * pixE;
@@ -41,9 +41,13 @@ int main(int argc, char** argv) {
 
 	rgb = (RGBQUAD*)malloc(sizeof(RGBQUAD) * 256);
 	fread(rgb, sizeof(RGBQUAD), 256, fp);
+
 	// BPL을 맞춰주기 위해서 픽셀데이터의 사이즈를 4의 배수로 조정
 	bpl = (bih.biWidth + 3) / 4 * 4;
 	bph = (bih.biHeight + 3) / 4 * 4;
+	// GPU로 연산할때 구간을 분할할 갯수
+	div_bpl = bpl / 64;
+	div_bph = bpl / 64;
 
 	pix = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bph);
 	memset(pix, 0, sizeof(unsigned char) * bpl * bph);
@@ -57,7 +61,6 @@ int main(int argc, char** argv) {
 
 	pixE_output = (int *)malloc(sizeof(int) * bpl * bph);
 	memset(pixE_output, 0, sizeof(int) * bpl * bph);
-
 
 
 	// GPU 연산을 위한 측정 시간 초기화.
@@ -283,7 +286,8 @@ void runKernel()
 	clSetKernelArg(simpleKernel, 0, sizeof(cl_mem), &d_pix);
 	clSetKernelArg(simpleKernel, 1, sizeof(cl_mem), &d_pixE);
 	clSetKernelArg(simpleKernel, 2, sizeof(int), &bpl);
-	clSetKernelArg(simpleKernel, 3, sizeof(int), &bph);
+	clSetKernelArg(simpleKernel, 3, sizeof(int), &div_bpl);
+	clSetKernelArg(simpleKernel, 4, sizeof(int), &div_bph);
 
 	clEnqueueNDRangeKernel(queue, simpleKernel, 2, NULL, globalSize,
 		NULL, 0, NULL, NULL);
@@ -322,7 +326,6 @@ void CpuCal()
 	{
 		for (int x = 1; x < (bpl - 1); x++)
 		{
-			// 병렬처리가 가능한 부분.
 			//tmppixel = pix[y * bpl + x];
 			pixE[y * bpl + x] += pix[y * bpl + x];
 			pix[y * bpl + x] = pixE[y * bpl + x] / 128 * 255;
@@ -339,14 +342,9 @@ void CpuCal()
 	/*
 	for (int i = 0; i < bpl * bph; i++)
 	{
-		if (pixE[i] > 255)
-		{
-			pixE[i] = 255;
-		}
-		pix[i] = pixE[i] / 132 * 255;
+		pix[i] = pixE[i] / 128 * 255;
 	}
 	*/
-	
 }
 void FwriteCPU()
 {

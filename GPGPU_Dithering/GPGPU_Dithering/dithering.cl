@@ -7,28 +7,26 @@ void simpleKernel(
 	__global unsigned char* pix,
 	__global int* pixE,
 	int bpl,
-	int bph
+	int div_bpl,
+	int div_bph
 )
 {	
-
 	uint dstYStride = get_global_size(0);
 	uint dstXStride = get_global_size(1);
 	uint globalRow = get_global_id(1);
 	uint globalCol = get_global_id(0);
 	uint dstIndex = globalRow * dstYStride + globalCol;
 
-	int dev_w = bpl / 64;
-	int dev_h = bph / 64;
 	int quant_err;
 	int tmpindex;
 	//unsigned char tmppix;
 
-	// globalCol / dev_w != bpl / dev_w 이 조건이 핵심
-	if(globalCol / dev_w != bpl / dev_w && globalRow % dev_h == 0 && globalCol % dev_w == 0)
+	// globalCol / div_bpl != div_num 이 조건이 핵심
+	if(globalCol / div_bpl != bpl / div_bpl && globalRow % div_bph == 0 && globalCol % div_bpl == 0)
 	{ 
-		for(int y = 0; y < dev_h; y++)
+		for(int y = 0; y < div_bph; y++)
 		{ 
-			for(int x = 0; x < dev_w; x++)
+			for(int x = 0; x < div_bpl; x++)
 			{		
 				tmpindex =  dstIndex + bpl * y + x; 
 				// 병렬처리가 가능한 부분.
