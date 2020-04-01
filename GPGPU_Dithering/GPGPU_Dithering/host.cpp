@@ -8,18 +8,17 @@ double total_Time_GPU, total_Time_CPU, tmp_time;
 
 BITMAPFILEHEADER bfh;
 BITMAPINFOHEADER bih;
-
 RGBQUAD* rgb;
-unsigned char* pix;
-int * pixE;
+
 int quant_error;
 int bpl, bph;
 
+unsigned char* pix;
+int * pixE;
+
 unsigned char* pix_output;
-int* pixE_1;
-int* pixE_2;
-int* pixE_3;
-int* pixE_4;
+int * pixE_output;
+
 
 
 char* readSource(char* kernelPath);
@@ -31,6 +30,7 @@ void Release();
 void CpuCal();
 void FwriteCPU();
 void FwriteGPU();
+
 int main(int argc, char** argv) {
 
 	FILE * fp;
@@ -54,6 +54,9 @@ int main(int argc, char** argv) {
 
 	pixE = (int *)malloc(sizeof(int) * bpl * bph);
 	memset(pixE, 0, sizeof(int) * bpl * bph);
+
+	pixE_output = (int *)malloc(sizeof(int) * bpl * bph);
+	memset(pixE_output, 0, sizeof(int) * bpl * bph);
 
 
 
@@ -105,6 +108,7 @@ int main(int argc, char** argv) {
 	free(pix_output);
 
 	free(pixE);
+	free(pixE_output);
 
 	fclose(fp);
 
@@ -279,6 +283,7 @@ void runKernel()
 	clSetKernelArg(simpleKernel, 0, sizeof(cl_mem), &d_pix);
 	clSetKernelArg(simpleKernel, 1, sizeof(cl_mem), &d_pixE);
 	clSetKernelArg(simpleKernel, 2, sizeof(int), &bpl);
+	clSetKernelArg(simpleKernel, 3, sizeof(int), &bph);
 
 	clEnqueueNDRangeKernel(queue, simpleKernel, 2, NULL, globalSize,
 		NULL, 0, NULL, NULL);
@@ -286,8 +291,19 @@ void runKernel()
 	clFinish(queue);
 
 	clEnqueueReadBuffer(queue, d_pix, CL_TRUE, 0,
-		bpl * bph * sizeof(unsigned char), pix_output, 0, NULL, NULL);
+	bpl * bph * sizeof(unsigned char), pix_output, 0, NULL, NULL);
+	/*clEnqueueReadBuffer(queue, d_pixE, CL_TRUE, 0,
+		bpl * bph * sizeof(int), pixE_output, 0, NULL, NULL);*/
 
+	/*
+	for (int y = 0; y < bph; y++)
+	{
+		for (int x = 0; x < bpl; x++)
+		{
+			pix_output[y * bpl + x] = pixE_output[y * bpl + x] / 128 * 255;
+		}
+	}
+	*/
 }
 
 void Release()
@@ -300,11 +316,14 @@ void Release()
 void CpuCal() 
 {
 	int quant_err = 0;
+	int tmppixel = 0;
+
 	for (int y = 1; y < (bph - 1); y++)
 	{
 		for (int x = 1; x < (bpl - 1); x++)
 		{
 			// 병렬처리가 가능한 부분.
+			//tmppixel = pix[y * bpl + x];
 			pixE[y * bpl + x] += pix[y * bpl + x];
 			pix[y * bpl + x] = pixE[y * bpl + x] / 128 * 255;
 
@@ -313,9 +332,21 @@ void CpuCal()
 			pixE[y * bpl + x + 1] += quant_error * 7 / 16;
 			pixE[(y + 1) * bpl + x - 1] += quant_error * 3 / 16;
 			pixE[(y + 1) * bpl + x] += quant_error * 5 / 16;
-			pixE[(y + 1) * bpl + x - 2] += quant_error * 1 / 16;
+			pixE[(y + 1) * bpl + x + 1] += quant_error * 1 / 16;
+				
 		}
 	}
+	/*
+	for (int i = 0; i < bpl * bph; i++)
+	{
+		if (pixE[i] > 255)
+		{
+			pixE[i] = 255;
+		}
+		pix[i] = pixE[i] / 132 * 255;
+	}
+	*/
+	
 }
 void FwriteCPU()
 {
@@ -326,6 +357,7 @@ void FwriteCPU()
 	fwrite(rgb, sizeof(RGBQUAD), 256, fp2);
 
 	fwrite(pix, sizeof(unsigned char), bpl * bph, fp2);
+	//fwrite(pixE, sizeof(int), bpl * bph, fp2);
 	fclose(fp2);
 }
 void FwriteGPU()
@@ -337,5 +369,6 @@ void FwriteGPU()
 	fwrite(rgb, sizeof(RGBQUAD), 256, fp2);
 
 	fwrite(pix_output, sizeof(unsigned char), bpl * bph, fp2);
+	//fwrite(pixE_output, sizeof(int), bpl * bph, fp2);
 	fclose(fp2);
 }

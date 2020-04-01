@@ -6,7 +6,8 @@ __kernel
 void simpleKernel(
 	__global unsigned char* pix,
 	__global int* pixE,
-	int bpl
+	int bpl,
+	int bph
 )
 {	
 
@@ -16,23 +17,23 @@ void simpleKernel(
 	uint globalCol = get_global_id(0);
 	uint dstIndex = globalRow * dstYStride + globalCol;
 
-	int dev = 128;
+	int dev_w = bpl / 64;
+	int dev_h = bph / 64;
+	int quant_err;
+	int tmpindex;
+	//unsigned char tmppix;
 
-	// if문 조건이 문제인거 같음!!
-	if(globalRow % dev == 0 && globalCol % dev == 0 )
+	// globalCol / dev_w != bpl / dev_w 이 조건이 핵심
+	if(globalCol / dev_w != bpl / dev_w && globalRow % dev_h == 0 && globalCol % dev_w == 0)
 	{ 
-		//pixE[dstIndex] = pix[dstIndex - 1];
-		int tmpindex;
-		int quant_err;
-		for(int y = 0; y < dev; y++)
+		for(int y = 0; y < dev_h; y++)
 		{ 
-			for(int x = 0; x < dev; x++)
+			for(int x = 0; x < dev_w; x++)
 			{		
 				tmpindex =  dstIndex + bpl * y + x; 
 				// 병렬처리가 가능한 부분.
 				pixE[tmpindex] += pix[tmpindex];
 				pix[tmpindex] = pixE[tmpindex] / 128 * 255;
-
 				quant_err = pixE[tmpindex] - pix[tmpindex];
 
 				pixE[tmpindex + 1] += quant_err * 7 / 16;
@@ -42,5 +43,4 @@ void simpleKernel(
 			}
 		}
 	}
-	
 }
