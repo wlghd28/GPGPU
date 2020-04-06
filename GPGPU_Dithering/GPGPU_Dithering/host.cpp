@@ -19,7 +19,7 @@ int * pixE;
 unsigned char* pix_output;
 int * pixE_output;
 
-
+int * pixE_test;
 
 char* readSource(char* kernelPath);
 void CLInit();
@@ -27,8 +27,8 @@ void bufferWrite();
 void runKernel();
 void Release();
 
-void CpuCal();
-void FwriteCPU();
+void CpuCal(int, int);
+void FwriteCPU(char *);
 void FwriteGPU();
 
 int main(int argc, char** argv) {
@@ -47,7 +47,7 @@ int main(int argc, char** argv) {
 	bph = (bih.biHeight + 3) / 4 * 4;
 	// GPU로 연산할때 구간을 분할할 갯수
 	div_bpl = bpl / 64;
-	div_bph = bpl / 64;
+	div_bph = bph / 64;
 
 	pix = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bph);
 	memset(pix, 0, sizeof(unsigned char) * bpl * bph);
@@ -56,29 +56,33 @@ int main(int argc, char** argv) {
 	pix_output = (unsigned char *)malloc(sizeof(unsigned char) * bpl * bph);
 	memcpy(pix_output, pix, sizeof(unsigned char) * bpl * bph);
 
-	pixE = (int *)malloc(sizeof(int) * bpl * bph);
-	memset(pixE, 0, sizeof(int) * bpl * bph);
+	pixE = (int *)malloc(sizeof(int) * (bpl + 64) * (bph + 64) * 2);
+	memset(pixE, 0, sizeof(int) * (bpl + 64) * (bph + 64) * 2);
 
 	pixE_output = (int *)malloc(sizeof(int) * bpl * bph);
 	memset(pixE_output, 0, sizeof(int) * bpl * bph);
 
+	pixE_test = (int *)malloc(sizeof(int) * bpl * bph);
+	memset(pixE_test, 0, sizeof(int) * bpl * bph);
 
+	/*
 	// GPU 연산을 위한 측정 시간 초기화.
 	total_Time_GPU = 0;
 	// GPU 연산
 	QueryPerformanceFrequency(&tot_clockFreq);	// 시간을 측정하기위한 준비
+
 	// OpenCL 디바이스, 커널 셋업
 	CLInit();
 
 
 	QueryPerformanceCounter(&tot_beginClock); // 시간측정 시작
-	// 디바이스 쪽 버퍼 생성 및 write								 
+	// 디바이스 쪽 버퍼 생성 및 write
 	bufferWrite();
 	//커널 실행
 	runKernel();
 	QueryPerformanceCounter(&tot_endClock);
 	total_Time_GPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
-		
+
 	printf("Total processing Time_GPU : %f ms\n", total_Time_GPU * 1000);
 
 	Release();
@@ -87,12 +91,22 @@ int main(int argc, char** argv) {
 	system("pause");
 
 	FwriteGPU();
-
+	*/
 	// CPU 연산을 위한 측정 시간 초기화
 	total_Time_CPU = 0;
 	QueryPerformanceCounter(&tot_beginClock); // 시간측정 시작
 	// CPU 연산
-	CpuCal();
+/*
+int vv[] =
+	{
+		2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53, 59, 61, 67, 71, 73, 79, 83, 89, 97
+	};
+	for (int v1=100; v1>0; v1--)
+		for (int v2 = v1/3; v2<v1; v2++)
+*/
+	int v1 = 87, v2 = 41;
+	CpuCal(v1, v2);
+
 	QueryPerformanceCounter(&tot_endClock);
 	total_Time_CPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 	printf("Total processing Time_CPU : %f ms\n", total_Time_CPU * 1000);
@@ -101,7 +115,7 @@ int main(int argc, char** argv) {
 
 	system("pause");
 
-	FwriteCPU();
+	// FwriteCPU();
 
 
 
@@ -112,6 +126,7 @@ int main(int argc, char** argv) {
 
 	free(pixE);
 	free(pixE_output);
+	free(pixE_test);
 
 	fclose(fp);
 
@@ -295,19 +310,19 @@ void runKernel()
 	clFinish(queue);
 
 	clEnqueueReadBuffer(queue, d_pix, CL_TRUE, 0,
-	bpl * bph * sizeof(unsigned char), pix_output, 0, NULL, NULL);
+		bpl * bph * sizeof(unsigned char), pix_output, 0, NULL, NULL);
 	/*clEnqueueReadBuffer(queue, d_pixE, CL_TRUE, 0,
 		bpl * bph * sizeof(int), pixE_output, 0, NULL, NULL);*/
 
-	/*
-	for (int y = 0; y < bph; y++)
-	{
-		for (int x = 0; x < bpl; x++)
+		/*
+		for (int y = 0; y < bph; y++)
 		{
-			pix_output[y * bpl + x] = pixE_output[y * bpl + x] / 128 * 255;
+			for (int x = 0; x < bpl; x++)
+			{
+				pix_output[y * bpl + x] = pixE_output[y * bpl + x] / 128 * 255;
+			}
 		}
-	}
-	*/
+		*/
 }
 
 void Release()
@@ -317,39 +332,85 @@ void Release()
 	clReleaseCommandQueue(queue);
 	clReleaseContext(context);
 }
-void CpuCal() 
+
+void CpuCal(int v1, int v2)
 {
 	int quant_err = 0;
-	int tmppixel = 0;
+	unsigned char tmppixel = 0;
+	int x, y, x0, y0, vsum;
+	char str[100];
 
-	for (int y = 1; y < (bph - 1); y++)
+
+	vsum = v1 + v2;
+	memset(pixE, 0, sizeof(int) * (bpl + 64) * (bph + 64) * 2);
+
+	FILE* fp;
+	fp = fopen("EDIMAGE2.bmp", "rb");
+
+	fread(&bfh, sizeof(bfh), 1, fp);
+	fread(&bih, sizeof(bih), 1, fp);
+
+	fread(rgb, sizeof(RGBQUAD), 256, fp);
+
+
+	fread(pix, sizeof(unsigned char), bpl * bph, fp);
+	fclose(fp);
+
+	for (int y = 0; y < bih.biHeight; y++)
 	{
-		for (int x = 1; x < (bpl - 1); x++)
+		if (y % 2 == 0)
 		{
-			//tmppixel = pix[y * bpl + x];
-			pixE[y * bpl + x] += pix[y * bpl + x];
-			pix[y * bpl + x] = pixE[y * bpl + x] / 128 * 255;
+			// 연속 같은 데이터이면 노이즈 추가
+			for (int x = 0; x < bih.biWidth - 1; x++)
+				if (pix[y * bpl + x] >= 5 && pix[y * bpl + x] <= 250 && pix[y * bpl + x] == pix[y * bpl + x + 1])
+					pix[y * bpl + x] = (pix[y * bpl + x] & 0x00ff) + ((rand() % 11) - 5);
 
-			quant_error = pixE[y * bpl + x] - pix[y * bpl + x];
 
-			pixE[y * bpl + x + 1] += quant_error * 7 / 16;
-			pixE[(y + 1) * bpl + x - 1] += quant_error * 3 / 16;
-			pixE[(y + 1) * bpl + x] += quant_error * 5 / 16;
-			pixE[(y + 1) * bpl + x + 1] += quant_error * 1 / 16;
-				
+			// 좌 -> 우
+			for (int x = 0; x < bih.biWidth; x++)
+			{
+				pixE[y * bpl + x] += pix[y * bpl + x];
+				pix[y * bpl + x] = pixE[y * bpl + x] / 128 * 255;
+				quant_error = pixE[y * bpl + x] - pix[y * bpl + x];
+
+				pixE[y * bpl + x + 1] += quant_error * v1 / vsum;
+				pixE[(y + 1) * bpl + x - 1] += quant_error * v2 / vsum;
+			}
+		}
+		else
+		{
+			// 연속 같은 데이터이면 노이즈 추가
+			for (int x = bih.biWidth - 1; x > 0; x--)
+				if (pix[y * bpl + x] >= 5 && pix[y * bpl + x] <= 250 && pix[y * bpl + x] == pix[y * bpl + x - 1])
+					pix[y * bpl + x] = (pix[y * bpl + x] & 0x00ff) + ((rand() % 11) - 5);
+
+			// 좌 <- 우
+			for (int x = bih.biWidth - 1; x >= 0; x--)
+			{
+				pixE[y * bpl + x] += pix[y * bpl + x];
+				pix[y * bpl + x] = pixE[y * bpl + x] / 128 * 255;
+				quant_error = pixE[y * bpl + x] - pix[y * bpl + x];
+
+				pixE[y * bpl + x - 1] += quant_error * v1 / vsum;
+				pixE[(y + 1) * bpl + x + 1] += quant_error * v2 / vsum;
+			}
 		}
 	}
-	/*
-	for (int i = 0; i < bpl * bph; i++)
-	{
-		pix[i] = pixE[i] / 128 * 255;
-	}
-	*/
+
+	sprintf(str, "Dither(%d,%d).bmp", v1, v2);
+	FwriteCPU(str);
+
+
+	printf(str, "v1= %d,  v2= %d", v1, v2);
+
+	sprintf(str, "v1= %d,  v2= %d", v1, v2);
+	//MessageBox(NULL, str, "Check", MB_OK);
 }
-void FwriteCPU()
+
+void FwriteCPU(char * fn)
 {
 	// 데이터 픽셀값을 bmp파일로 쓴다.
-	FILE * fp2 = fopen("new_EDIMAGE_CPU.bmp", "wb");
+	FILE * fp2 = fopen(fn, "wb");
 	fwrite(&bfh, sizeof(bfh), 1, fp2);
 	fwrite(&bih, sizeof(bih), 1, fp2);
 	fwrite(rgb, sizeof(RGBQUAD), 256, fp2);
