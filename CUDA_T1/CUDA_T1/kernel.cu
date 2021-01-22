@@ -14,10 +14,10 @@ double total_Time_GPU = 0;
 LARGE_INTEGER beginClock, endClock, clockFreq;
 LARGE_INTEGER tot_beginClock, tot_endClock, tot_clockFreq;
 
-BYTE * pix;
-BYTE * b_pix;
-//RGBTRIPLE * pix;
-//RGBTRIPLE * b_pix;
+//BYTE * pix;
+//BYTE * b_pix;
+RGBTRIPLE * pix;
+RGBTRIPLE * b_pix;
 BITMAPFILEHEADER bfh;
 BITMAPINFOHEADER bih;
 BITMAPFILEHEADER b_bfh;
@@ -33,7 +33,7 @@ int b_pix_size;	// 5 X 5개 만큼 복붙한 이미지 사이즈
 int pad, b_pad;		// 패딩 메모리
 //unsigned char* pix; // 원본 이미지
 //unsigned char* pix_out; // GPU 연산결과 이미지
-long trash;
+BYTE * trash;
 
 void GraphicInfo();				// 현재 장착된 그래픽카드의 정보를 불러온다
 char str[100];
@@ -42,19 +42,20 @@ void Fwrite_Extend(char * fn);		// 연산된 픽셀값을 bmp파일로 저장한
 void Fwrite(char * fn);
 void Draw();					// pix 데이터를 화면으로 출력
 void b_Draw();					// b_pix 데이터를 화면으로 출력
-cudaError_t extendWithCuda(BYTE* b_pix, int size);
+cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int size);
 
-__global__ void extendKernel(BYTE* d_b_pix, BYTE* d_pix, const int width, const int b_width, const int height)
+__global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, const int width, const int b_width, const int height)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int px = i % width;
 	int py = (i % (b_width * height)) / b_width;
 	int i2 = px + py * width;
-	//d_b_pix[i].rgbtBlue = d_pix[i2].rgbtBlue;
-	//d_b_pix[i].rgbtGreen = d_pix[i2].rgbtGreen;
-	//d_b_pix[i].rgbtRed = d_pix[i2].rgbtRed;
 
-	d_b_pix[i] = d_pix[i2];
+	d_b_pix[i].rgbtBlue = d_pix[i2].rgbtBlue;
+	d_b_pix[i].rgbtGreen = d_pix[i2].rgbtGreen;
+	d_b_pix[i].rgbtRed = d_pix[i2].rgbtRed;
+
+	//d_b_pix[i] = d_pix[i2];
 
 }
 
@@ -64,8 +65,8 @@ int main()
 	FILE * fp;
 	
 	//fp = fopen("test3.bmp", "rb");
-	//fp = fopen("lenna_407.bmp", "rb");
-	fp = fopen("323test4.bmp", "rb");
+	fp = fopen("lenna_406.bmp", "rb");
+	//fp = fopen("323test4.bmp", "rb");
 
 	if (fp == NULL)
 	{
@@ -95,29 +96,29 @@ int main()
 	b_bpl_size = b_bpl * b_height;
 
 	// 이미지 사이즈
-	pix_size = width * height * 3;
-	b_pix_size = b_width * b_height * 3;
+	pix_size = width * height;
+	b_pix_size = b_width * b_height;
 
 	printf("Image size : %d X %d\n", width, height);
 	printf("Memory size : %d byte\n", bpl_size);
 	printf("%d X %d Image size : %d X %d\n", channel, channel, b_width, b_height);
 	printf("%d X %d Memory size : %d byte\n", channel, channel, b_bpl_size);
 
+	trash = (BYTE *)calloc(b_pad, sizeof(BYTE));
 	// 원본 이미지 데이터
-	//pix = (RGBTRIPLE *)calloc(pix_size, sizeof(RGBTRIPLE));
-	//fread(pix, sizeof(RGBTRIPLE), pix_size, fp);
-	pix = (BYTE *)calloc(pix_size, sizeof(BYTE));
+	pix = (RGBTRIPLE *)calloc(pix_size, sizeof(RGBTRIPLE));
 	for (int i = 0; i < height; i++)
 	{
-		fread(pix + (i * width * 3), sizeof(BYTE), width * 3, fp);
+		fread(pix + (i * width), sizeof(RGBTRIPLE), width, fp);
 		fread(&trash, sizeof(BYTE), pad, fp);
 	}
 	//fread(pix, sizeof(BYTE), pix_size, fp);
 	// 5 X 5 이미지 데이터
 	//b_pix = (RGBTRIPLE *)calloc(b_pix_size, sizeof(RGBTRIPLE));
-	b_pix = (BYTE *)calloc(b_pix_size, sizeof(BYTE));
+	b_pix = (RGBTRIPLE *)calloc(b_pix_size, sizeof(RGBTRIPLE));
+	
 	/*
-	while(1)
+	for(int i = 0; i < 1000; i++)
 	{
 		Draw();
 	}
@@ -177,8 +178,8 @@ int main()
 
 	//sprintf(str, "test_GPU.bmp");
 	//sprintf(str_Extend, "test3_Extend.bmp");
-	//sprintf(str_Extend, "lenna_407_Extend.bmp");
-	sprintf(str_Extend, "323test4_Extend.bmp");
+	sprintf(str_Extend, "lenna_406_Extend.bmp");
+	//sprintf(str_Extend, "323test4_Extend.bmp");
 
 	//Fwrite(str);
 	Fwrite_Extend(str_Extend);
@@ -192,16 +193,17 @@ int main()
 
 	free(pix);
 	free(b_pix);
+	free(trash);
 	fclose(fp);
 
 	return 0;
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t extendWithCuda(BYTE* b_pix, int thread)
+cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 {
-	BYTE * d_b_pix = 0;
-	BYTE * d_pix = 0;
+	RGBTRIPLE * d_b_pix = 0;
+	RGBTRIPLE * d_pix = 0;
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -212,13 +214,13 @@ cudaError_t extendWithCuda(BYTE* b_pix, int thread)
     }
 
     // Allocate GPU buffers for three vectors (two input, one output)    .
-    cudaStatus = cudaMalloc((void**)&d_b_pix, b_pix_size * sizeof(BYTE));
+    cudaStatus = cudaMalloc((void**)&d_b_pix, b_pix_size * sizeof(RGBTRIPLE));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed!");
         goto Error;
     }
 
-	cudaStatus = cudaMalloc((void**)&d_pix, pix_size * sizeof(BYTE));
+	cudaStatus = cudaMalloc((void**)&d_pix, pix_size * sizeof(RGBTRIPLE));
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMalloc failed!");
 		goto Error;
@@ -226,7 +228,7 @@ cudaError_t extendWithCuda(BYTE* b_pix, int thread)
 
 
     // Copy input vectors from host memory to GPU buffers.
-	cudaStatus = cudaMemcpy(d_pix, pix, pix_size * sizeof(BYTE), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(d_pix, pix, pix_size * sizeof(RGBTRIPLE), cudaMemcpyHostToDevice);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 		goto Error;
@@ -234,7 +236,7 @@ cudaError_t extendWithCuda(BYTE* b_pix, int thread)
 
     // Launch a kernel on the GPU with one thread for each element.
 	// 함수명<<<블록 수, 스레드 수>>>(매개변수);
-    extendKernel<<< (b_pix_size + thread - 1) / thread, thread >>>(d_b_pix, d_pix, width * 3, b_width * 3, height);
+    extendKernel<<< (b_pix_size + thread - 1) / thread, thread >>>(d_b_pix, d_pix, width, b_width, height);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -252,7 +254,7 @@ cudaError_t extendWithCuda(BYTE* b_pix, int thread)
     }
 
     // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(b_pix, d_b_pix, b_pix_size * sizeof(BYTE), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(b_pix, d_b_pix, b_pix_size * sizeof(RGBTRIPLE), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed!");
         goto Error;
@@ -343,7 +345,7 @@ void Fwrite_Extend(char * fn)
 	
 	for (int i = 0; i < b_height; i++)
 	{
-		fwrite(b_pix + (i * b_width * 3), sizeof(BYTE), b_width * 3, fp2);
+		fwrite(b_pix + (i * b_width), sizeof(RGBTRIPLE), b_width, fp2);
 		fwrite(&trash, sizeof(BYTE), b_pad, fp2);
 	}
 	
