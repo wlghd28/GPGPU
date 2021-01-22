@@ -14,46 +14,58 @@ double total_Time_GPU = 0;
 LARGE_INTEGER beginClock, endClock, clockFreq;
 LARGE_INTEGER tot_beginClock, tot_endClock, tot_clockFreq;
 
-typedef struct RGB {
-	unsigned char red;
-	unsigned char green;
-	unsigned char blue;
-}RGB;
-RGB * b_pix;	// 5 X 5개 복붙한 이미지 픽셀
-RGB * pix;
+BYTE * pix;
+BYTE * b_pix;
+//RGBTRIPLE * pix;
+//RGBTRIPLE * b_pix;
 BITMAPFILEHEADER bfh;
 BITMAPINFOHEADER bih;
+BITMAPFILEHEADER b_bfh;
+BITMAPINFOHEADER b_bih;
 
 // 이미지 정보를 다루기 위해 사용하는 변수
+int channel = 5;
 int bpl, b_bpl;
+int bpl_size, b_bpl_size;
 int width, height, b_width, b_height;
 int pix_size;
 int b_pix_size;	// 5 X 5개 만큼 복붙한 이미지 사이즈
+int pad, b_pad;		// 패딩 메모리
 //unsigned char* pix; // 원본 이미지
 //unsigned char* pix_out; // GPU 연산결과 이미지
+long trash;
 
 void GraphicInfo();				// 현재 장착된 그래픽카드의 정보를 불러온다
 char str[100];
-void Fwrite(char * fn);		// 연산된 픽셀값을 bmp파일로 저장한다
+char str_Extend[100];
+void Fwrite_Extend(char * fn);		// 연산된 픽셀값을 bmp파일로 저장한다
+void Fwrite(char * fn);
+void Draw();					// pix 데이터를 화면으로 출력
+void b_Draw();					// b_pix 데이터를 화면으로 출력
+cudaError_t extendWithCuda(BYTE* b_pix, int size);
 
-cudaError_t addWithCuda(RGB* a, int size);
-
-__global__ void addKernel(RGB* a, RGB* d_pix, const int width, const int b_width, const int height)
+__global__ void extendKernel(BYTE* d_b_pix, BYTE* d_pix, const int width, const int b_width, const int height)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
-	int px = (i % b_width) % width;
+	int px = i % width;
 	int py = (i % (b_width * height)) / b_width;
-	int i2 = px + width * py;
-	a[i].red = d_pix[i2].red;
-	a[i].green = d_pix[i2].green;
-	a[i].blue = d_pix[i2].blue;
+	int i2 = px + py * width;
+	//d_b_pix[i].rgbtBlue = d_pix[i2].rgbtBlue;
+	//d_b_pix[i].rgbtGreen = d_pix[i2].rgbtGreen;
+	//d_b_pix[i].rgbtRed = d_pix[i2].rgbtRed;
+
+	d_b_pix[i] = d_pix[i2];
+
 }
 
 int main()
 {
 	GraphicInfo();
 	FILE * fp;
-	fp = fopen("323test1.bmp", "rb");
+	
+	//fp = fopen("test3.bmp", "rb");
+	//fp = fopen("lenna_407.bmp", "rb");
+	fp = fopen("323test4.bmp", "rb");
 
 	if (fp == NULL)
 	{
@@ -66,26 +78,64 @@ int main()
 
 	width = bih.biWidth;
 	height = bih.biHeight;
-	b_width = width * 5;
-	b_height = height * 5;
+	b_width = width * channel;
+	b_height = height * channel;
 
-	// BPL을 맞춰주기 위해서 픽셀데이터의 사이즈를 4의 배수로 조정
-	bpl = (width + 3) / 4 * 4;
-	b_bpl = (b_width + 3) / 4 * 4;
+	
+	// BPL을 맞춰주기 위해서 픽셀데이터의 메모리를 4의 배수로 조정
+	bpl = (width * 3 + 3) / 4 * 4;
+	b_bpl = (b_width * 3 + 3) / 4 * 4;
+	//b_bpl = bpl * channel;
+	pad = bpl - width * 3;
+	b_pad = b_bpl - b_width * 3;
+	//bpl = bih.biSizeImage / height;
 
-	// 이미지 사이즈 정보
-	pix_size = bih.biSizeImage / 3;
-	b_pix_size = bih.biSizeImage * 25 / 3;
+	// BPL을 맞춘 메모리 사이즈
+	bpl_size = bpl * height;
+	b_bpl_size = b_bpl * b_height;
+
+	// 이미지 사이즈
+	pix_size = width * height * 3;
+	b_pix_size = b_width * b_height * 3;
+
 	printf("Image size : %d X %d\n", width, height);
-	printf("Memory size : %d byte\n", pix_size * 3);
-	printf("5 X 5 Image size : %d X %d\n", b_width, b_height);
-	printf("Memory size : %d byte\n", b_pix_size * 3);
+	printf("Memory size : %d byte\n", bpl_size);
+	printf("%d X %d Image size : %d X %d\n", channel, channel, b_width, b_height);
+	printf("%d X %d Memory size : %d byte\n", channel, channel, b_bpl_size);
 
-	// 원본 이미지 데이터 읽어 들인다
-	pix = (RGB *)calloc(bpl * height, sizeof(RGB));
-	fread(pix, sizeof(RGB), pix_size, fp);
+	// 원본 이미지 데이터
+	//pix = (RGBTRIPLE *)calloc(pix_size, sizeof(RGBTRIPLE));
+	//fread(pix, sizeof(RGBTRIPLE), pix_size, fp);
+	pix = (BYTE *)calloc(pix_size, sizeof(BYTE));
+	for (int i = 0; i < height; i++)
+	{
+		fread(pix + (i * width * 3), sizeof(BYTE), width * 3, fp);
+		fread(&trash, sizeof(BYTE), pad, fp);
+	}
+	//fread(pix, sizeof(BYTE), pix_size, fp);
+	// 5 X 5 이미지 데이터
+	//b_pix = (RGBTRIPLE *)calloc(b_pix_size, sizeof(RGBTRIPLE));
+	b_pix = (BYTE *)calloc(b_pix_size, sizeof(BYTE));
+	/*
+	while(1)
+	{
+		Draw();
+	}
+	*/
 
-	b_pix = (RGB *)calloc(b_pix_size, sizeof(RGB));
+	/*
+	for (int i = 0; i < height; i++)
+	{
+		fread(pix + (i * width), sizeof(RGBTRIPLE), width, fp);
+		fread(&trash, sizeof(RGBTRIPLE), bpl - width, fp);
+	}
+	*/
+	/*
+	for (int i = 0; i < bih.biSizeImage; i++)
+	{
+		printf("%d\n", pix[i].rgbtRed);
+	}
+	*/
 
 	QueryPerformanceFrequency(&tot_clockFreq);	// 시간을 측정하기위한 준비
 
@@ -105,7 +155,7 @@ int main()
 	
 	QueryPerformanceCounter(&tot_beginClock); // GPU 시간측정 시작
 	// Add vectors in parallel.
-	cudaError_t cudaStatus = addWithCuda(b_pix, threadsPerBlock);
+	cudaError_t cudaStatus = extendWithCuda(b_pix, threadsPerBlock);
 	QueryPerformanceCounter(&tot_endClock); // GPU 시간측정 종료
 	total_Time_GPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 
@@ -121,12 +171,25 @@ int main()
 		fprintf(stderr, "cudaDeviceReset failed!");
 		return 1;
 	}
-
 	printf("CPU 실행시간 : %f\nGPU 실행시간 : %f\n",
 		total_Time_CPU * 1000, total_Time_GPU * 1000);
 
-	sprintf(str, "323test1_GPU.bmp");
-	Fwrite(str);
+
+	//sprintf(str, "test_GPU.bmp");
+	//sprintf(str_Extend, "test3_Extend.bmp");
+	//sprintf(str_Extend, "lenna_407_Extend.bmp");
+	sprintf(str_Extend, "323test4_Extend.bmp");
+
+	//Fwrite(str);
+	Fwrite_Extend(str_Extend);
+	/*
+	for (int i = 0; i < 1000; i++)
+	{
+		b_Draw();
+	}
+	*/
+
+
 	free(pix);
 	free(b_pix);
 	fclose(fp);
@@ -135,10 +198,10 @@ int main()
 }
 
 // Helper function for using CUDA to add vectors in parallel.
-cudaError_t addWithCuda(RGB* a, int thread)
+cudaError_t extendWithCuda(BYTE* b_pix, int thread)
 {
-    RGB * dev_a = 0;
-	RGB * d_pix = 0;
+	BYTE * d_b_pix = 0;
+	BYTE * d_pix = 0;
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -148,14 +211,14 @@ cudaError_t addWithCuda(RGB* a, int thread)
         goto Error;
     }
 
-    // Allocate GPU buffers for three vectors (one input, one output)    .
-    cudaStatus = cudaMalloc((void**)&dev_a, b_pix_size * sizeof(RGB));
+    // Allocate GPU buffers for three vectors (two input, one output)    .
+    cudaStatus = cudaMalloc((void**)&d_b_pix, b_pix_size * sizeof(BYTE));
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMalloc failed!");
         goto Error;
     }
 
-	cudaStatus = cudaMalloc((void**)&d_pix, pix_size * sizeof(RGB));
+	cudaStatus = cudaMalloc((void**)&d_pix, pix_size * sizeof(BYTE));
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMalloc failed!");
 		goto Error;
@@ -163,13 +226,7 @@ cudaError_t addWithCuda(RGB* a, int thread)
 
 
     // Copy input vectors from host memory to GPU buffers.
-    cudaStatus = cudaMemcpy(dev_a, a, b_pix_size * sizeof(RGB), cudaMemcpyHostToDevice);
-    if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
-        goto Error;
-    }
-
-	cudaStatus = cudaMemcpy(d_pix, pix, pix_size * sizeof(RGB), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(d_pix, pix, pix_size * sizeof(BYTE), cudaMemcpyHostToDevice);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!");
 		goto Error;
@@ -177,7 +234,7 @@ cudaError_t addWithCuda(RGB* a, int thread)
 
     // Launch a kernel on the GPU with one thread for each element.
 	// 함수명<<<블록 수, 스레드 수>>>(매개변수);
-    addKernel<<< b_pix_size/thread + 1, thread >>>(dev_a, d_pix, width, b_width, height);
+    extendKernel<<< (b_pix_size + thread - 1) / thread, thread >>>(d_b_pix, d_pix, width * 3, b_width * 3, height);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -195,7 +252,7 @@ cudaError_t addWithCuda(RGB* a, int thread)
     }
 
     // Copy output vector from GPU buffer to host memory.
-    cudaStatus = cudaMemcpy(a, dev_a, b_pix_size * sizeof(RGB), cudaMemcpyDeviceToHost);
+    cudaStatus = cudaMemcpy(b_pix, d_b_pix, b_pix_size * sizeof(BYTE), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
         fprintf(stderr, "cudaMemcpy failed!");
         goto Error;
@@ -204,7 +261,7 @@ cudaError_t addWithCuda(RGB* a, int thread)
 
 
 Error:
-    cudaFree(dev_a);
+    cudaFree(d_b_pix);
 	cudaFree(d_pix);
 
     return cudaStatus;
@@ -255,16 +312,62 @@ void GraphicInfo()
 
 }
 
-// 데이터 픽셀값을 bmp파일로 쓴다.
 void Fwrite(char * fn)
 {
 	FILE * fp2 = fopen(fn, "wb");
-	bih.biWidth *= 5;
-	bih.biHeight *= 5;
-	bih.biSizeImage *= 25;
-
 	fwrite(&bfh, sizeof(bfh), 1, fp2);
 	fwrite(&bih, sizeof(bih), 1, fp2);
-	fwrite(b_pix, sizeof(RGB), b_pix_size, fp2);
+
+	for (int i = 0; i < height; i++)
+	{
+		fwrite(pix + (i * width * 3), sizeof(BYTE), width * 3, fp2);
+		fwrite(&trash, sizeof(BYTE), pad, fp2);
+	}
+
 	fclose(fp2);
 }
+
+// 데이터 픽셀값을 bmp파일로 쓴다.
+void Fwrite_Extend(char * fn)
+{
+	FILE * fp2 = fopen(fn, "wb");
+	b_bfh = bfh;
+	b_bih = bih;
+	b_bih.biWidth = b_width;
+	b_bih.biHeight = b_height;
+	b_bih.biSizeImage = b_bpl_size;
+	b_bfh.bfSize = b_bih.biSizeImage + sizeof(BITMAPFILEHEADER) + sizeof(BITMAPINFOHEADER);
+
+	fwrite(&b_bfh, sizeof(bfh), 1, fp2);
+	fwrite(&b_bih, sizeof(bih), 1, fp2);
+	
+	for (int i = 0; i < b_height; i++)
+	{
+		fwrite(b_pix + (i * b_width * 3), sizeof(BYTE), b_width * 3, fp2);
+		fwrite(&trash, sizeof(BYTE), b_pad, fp2);
+	}
+	
+	fclose(fp2);
+}
+// 연산된 RGB 값을 화면에 출력시킨다.
+void Draw()
+{
+	HDC hdc;
+	hdc = GetDC(NULL);
+
+	SetDIBitsToDevice(hdc, 0, 0, bpl, height, 0, 0, 0, height,
+		(BYTE *)pix, (const BITMAPINFO *)&bih, DIB_RGB_COLORS);
+
+	ReleaseDC(NULL, hdc);
+}
+void b_Draw()
+{
+	HDC hdc;
+	hdc = GetDC(NULL);
+
+	SetDIBitsToDevice(hdc, 0, 0, b_width, height * 2, 0, 0, 0, height * 2,
+		(BYTE *)b_pix, (const BITMAPINFO *)&b_bih, DIB_RGB_COLORS);
+
+	ReleaseDC(NULL, hdc);
+}
+
