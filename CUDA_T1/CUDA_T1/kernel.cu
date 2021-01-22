@@ -7,6 +7,9 @@
 #include <time.h>
 #include <process.h>
 
+// 마스크값 배열
+RGBTRIPLE Mask[25];
+
 int threadsPerBlock = 1024;
 
 double total_Time_CPU = 0;
@@ -44,29 +47,55 @@ void Draw();					// pix 데이터를 화면으로 출력
 void b_Draw();					// b_pix 데이터를 화면으로 출력
 cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int size);
 
-__global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, const int width, const int b_width, const int height)
+__global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, RGBTRIPLE* mask, const int width, const int b_width, const int height)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int px = i % width;
 	int py = (i % (b_width * height)) / b_width;
-	int i2 = px + py * width;
+	int ip = px + py * width;
+	int mx = (i % b_width) / width;
+	int my = i / (b_width * height);
+	int im = mx + my * 5;
 
-	d_b_pix[i].rgbtBlue = d_pix[i2].rgbtBlue;
-	d_b_pix[i].rgbtGreen = d_pix[i2].rgbtGreen;
-	d_b_pix[i].rgbtRed = d_pix[i2].rgbtRed;
+	d_b_pix[i].rgbtBlue = d_pix[ip].rgbtBlue;
+	d_b_pix[i].rgbtGreen = d_pix[ip].rgbtGreen;
+	d_b_pix[i].rgbtRed = d_pix[ip].rgbtRed;
+
+	d_b_pix[i].rgbtBlue += mask[im].rgbtBlue;
+	d_b_pix[i].rgbtGreen += mask[im].rgbtGreen;
+	d_b_pix[i].rgbtRed += mask[im].rgbtRed;
+
+	if (d_b_pix[i].rgbtBlue > 255)
+		d_b_pix[i].rgbtBlue = 255;
+	if (d_b_pix[i].rgbtBlue < 0)
+		d_b_pix[i].rgbtBlue = 0;
+	if (d_b_pix[i].rgbtGreen > 255)
+		d_b_pix[i].rgbtGreen = 255;
+	if (d_b_pix[i].rgbtGreen < 0)
+		d_b_pix[i].rgbtGreen = 0;
+	if (d_b_pix[i].rgbtRed > 255)
+		d_b_pix[i].rgbtRed = 255;
+	if (d_b_pix[i].rgbtRed < 0)
+		d_b_pix[i].rgbtRed = 0;
 
 	//d_b_pix[i] = d_pix[i2];
-
 }
 
 int main()
 {
+	for (int i = 0; i < 25; i++)
+	{
+		Mask[i].rgbtRed = i * 37;
+		Mask[i].rgbtGreen = 50;
+		Mask[i].rgbtBlue = i * 23;
+	}
+
 	GraphicInfo();
 	FILE * fp;
 	
 	//fp = fopen("test3.bmp", "rb");
-	fp = fopen("lenna_406.bmp", "rb");
-	//fp = fopen("323test4.bmp", "rb");
+	//fp = fopen("lenna_406.bmp", "rb");
+	fp = fopen("323test1.bmp", "rb");
 
 	if (fp == NULL)
 	{
@@ -86,16 +115,16 @@ int main()
 	// BPL을 맞춰주기 위해서 픽셀데이터의 메모리를 4의 배수로 조정
 	bpl = (width * 3 + 3) / 4 * 4;
 	b_bpl = (b_width * 3 + 3) / 4 * 4;
-	//b_bpl = bpl * channel;
+
+	// 패딩 값 계산
 	pad = bpl - width * 3;
 	b_pad = b_bpl - b_width * 3;
-	//bpl = bih.biSizeImage / height;
 
 	// BPL을 맞춘 메모리 사이즈
 	bpl_size = bpl * height;
 	b_bpl_size = b_bpl * b_height;
 
-	// 이미지 사이즈
+	// 순수 이미지 사이즈
 	pix_size = width * height;
 	b_pix_size = b_width * b_height;
 
@@ -104,6 +133,7 @@ int main()
 	printf("%d X %d Image size : %d X %d\n", channel, channel, b_width, b_height);
 	printf("%d X %d Memory size : %d byte\n", channel, channel, b_bpl_size);
 
+	// 쓰레기 값
 	trash = (BYTE *)calloc(b_pad, sizeof(BYTE));
 	// 원본 이미지 데이터
 	pix = (RGBTRIPLE *)calloc(pix_size, sizeof(RGBTRIPLE));
@@ -112,9 +142,8 @@ int main()
 		fread(pix + (i * width), sizeof(RGBTRIPLE), width, fp);
 		fread(&trash, sizeof(BYTE), pad, fp);
 	}
-	//fread(pix, sizeof(BYTE), pix_size, fp);
+
 	// 5 X 5 이미지 데이터
-	//b_pix = (RGBTRIPLE *)calloc(b_pix_size, sizeof(RGBTRIPLE));
 	b_pix = (RGBTRIPLE *)calloc(b_pix_size, sizeof(RGBTRIPLE));
 	
 	/*
@@ -124,19 +153,6 @@ int main()
 	}
 	*/
 
-	/*
-	for (int i = 0; i < height; i++)
-	{
-		fread(pix + (i * width), sizeof(RGBTRIPLE), width, fp);
-		fread(&trash, sizeof(RGBTRIPLE), bpl - width, fp);
-	}
-	*/
-	/*
-	for (int i = 0; i < bih.biSizeImage; i++)
-	{
-		printf("%d\n", pix[i].rgbtRed);
-	}
-	*/
 
 	QueryPerformanceFrequency(&tot_clockFreq);	// 시간을 측정하기위한 준비
 
@@ -178,8 +194,8 @@ int main()
 
 	//sprintf(str, "test_GPU.bmp");
 	//sprintf(str_Extend, "test3_Extend.bmp");
-	sprintf(str_Extend, "lenna_406_Extend.bmp");
-	//sprintf(str_Extend, "323test4_Extend.bmp");
+	//sprintf(str_Extend, "lenna_406_Extend.bmp");
+	sprintf(str_Extend, "323test1_Extend.bmp");
 
 	//Fwrite(str);
 	Fwrite_Extend(str_Extend);
@@ -204,6 +220,7 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 {
 	RGBTRIPLE * d_b_pix = 0;
 	RGBTRIPLE * d_pix = 0;
+	RGBTRIPLE * mask = 0;
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -226,6 +243,11 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 		goto Error;
 	}
 
+	cudaStatus = cudaMalloc((void**)&mask, 25 * sizeof(RGBTRIPLE));
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMalloc failed!");
+		goto Error;
+	}
 
     // Copy input vectors from host memory to GPU buffers.
 	cudaStatus = cudaMemcpy(d_pix, pix, pix_size * sizeof(RGBTRIPLE), cudaMemcpyHostToDevice);
@@ -234,9 +256,15 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 		goto Error;
 	}
 
+	cudaStatus = cudaMemcpy(mask, Mask, 25 * sizeof(RGBTRIPLE), cudaMemcpyHostToDevice);
+	if (cudaStatus != cudaSuccess) {
+		fprintf(stderr, "cudaMemcpy failed!");
+		goto Error;
+	}
+
     // Launch a kernel on the GPU with one thread for each element.
 	// 함수명<<<블록 수, 스레드 수>>>(매개변수);
-    extendKernel<<< (b_pix_size + thread - 1) / thread, thread >>>(d_b_pix, d_pix, width, b_width, height);
+    extendKernel<<< (b_pix_size + thread - 1) / thread, thread >>>(d_b_pix, d_pix, mask, width, b_width, height);
 
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
@@ -265,6 +293,7 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 Error:
     cudaFree(d_b_pix);
 	cudaFree(d_pix);
+	cudaFree(mask);
 
     return cudaStatus;
 }
