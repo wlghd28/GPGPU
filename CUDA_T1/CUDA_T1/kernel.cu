@@ -101,6 +101,7 @@ int main()
 	if (fp == NULL)
 	{
 		printf("File Not Found!!\n");
+		system("pause");
 		return 0;
 	}
 	// 파일헤더, 정보헤더 읽어들인다
@@ -190,7 +191,7 @@ int main()
 	QueryPerformanceCounter(&tot_endClock); // CPU 시간측정 종료
 	total_Time_CPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 
-	sprintf(str_Extend, "323test1_Extend_CPU.bmp");
+	sprintf(str_Extend, "output_CPU.bmp");
 
 	//Fwrite(str);
 	Fwrite_Extend(str_Extend);
@@ -226,7 +227,7 @@ int main()
 	//sprintf(str_Extend, "test3_Extend.bmp");
 	//sprintf(str_Extend, "lenna_406_Extend.bmp");
 	//sprintf(str_Extend, "323test1_Extend_GPU.bmp");
-	sprintf(str_Extend, "output.bmp");
+	sprintf(str_Extend, "output_GPU.bmp");
 
 	//Fwrite(str);
 	Fwrite_Extend(str_Extend);
