@@ -38,13 +38,14 @@ int b_pix_size;	// 5 X 5개 만큼 복붙한 이미지 사이즈
 int pad, b_pad;		// 패딩 메모리 사이즈
 BYTE trash[3] = {0};		// 패딩 메모리
 
-void GraphicInfo();				// 현재 장착된 그래픽카드의 정보를 불러온다
+void MaskAlloc();			// 마스크 값 할당
+void GraphicInfo();			// 현재 장착된 그래픽카드의 정보를 불러온다
 char str[100];
 char str_Extend[100];
 void Fwrite_Extend(char * fn);		// 연산된 픽셀값을 bmp파일로 저장한다
 void Fwrite(char * fn);
-void Draw();					// pix 데이터를 화면으로 출력
-void b_Draw();					// b_pix 데이터를 화면으로 출력
+void Draw();				// pix 데이터를 화면으로 출력
+void b_Draw();				// b_pix 데이터를 화면으로 출력
 cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int size);
 
 __global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, RGBTRIPLE* mask, const int width, const int b_width, const int height)
@@ -83,15 +84,8 @@ __global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, RGBTRIPLE* ma
 
 int main()
 {
-	for (int i = 0; i < 25; i++)
-	{
-		Mask[i].rgbtRed = i * 37;
-		Mask[i].rgbtGreen = 50;
-		Mask[i].rgbtBlue = i * 23;
-	}
-
+	MaskAlloc();
 	GraphicInfo();
-
 	FILE * fp;
 	
 	//fp = fopen("test3.bmp", "rb");
@@ -337,6 +331,20 @@ Error:
 
     return cudaStatus;
 }
+void MaskAlloc()
+{
+	char c;
+	FILE * fp;
+	fp = fopen("config_5.txt", "r");
+	for (int i = 0; i < 25; i++)
+	{
+		fscanf(fp, "%d%c", &Mask[i].rgbtBlue, &c);
+		fscanf(fp, "%d%c", &Mask[i].rgbtGreen, &c);
+		fscanf(fp, "%d%c", &Mask[i].rgbtRed, &c);
+	}
+	fclose(fp);
+}
+
 void GraphicInfo()
 {
 	cudaDeviceProp  prop;
