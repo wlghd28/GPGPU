@@ -8,7 +8,13 @@
 #include <process.h>
 
 // 마스크값 배열
-RGBTRIPLE Mask[25];
+typedef struct MASK
+{
+	char red;
+	char green;
+	char blue;
+}MASK;
+MASK Mask[25];
 
 char** device_name = 0;
 int* threadsPerBlock;
@@ -48,7 +54,7 @@ void Draw();				// pix 데이터를 화면으로 출력
 void b_Draw();				// b_pix 데이터를 화면으로 출력
 cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int size);
 
-__global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, RGBTRIPLE* mask, const int width, const int b_width, const int height)
+__global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, MASK* mask, const int width, const int b_width, const int height)
 {
     int i = threadIdx.x + blockIdx.x * blockDim.x;
 	int px = i % width;
@@ -62,19 +68,19 @@ __global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, RGBTRIPLE* ma
 	d_b_pix[i].rgbtGreen = d_pix[ip].rgbtGreen;
 	d_b_pix[i].rgbtRed = d_pix[ip].rgbtRed;
 
-	d_b_pix[i].rgbtBlue += mask[im].rgbtBlue;
-	d_b_pix[i].rgbtGreen += mask[im].rgbtGreen;
-	d_b_pix[i].rgbtRed += mask[im].rgbtRed;
+	d_b_pix[i].rgbtBlue += mask[im].blue;
+	d_b_pix[i].rgbtGreen += mask[im].green;
+	d_b_pix[i].rgbtRed += mask[im].red;
 
-	if (d_b_pix[i].rgbtBlue > 255)
+	if (d_b_pix[i].rgbtBlue >= 255)
 		d_b_pix[i].rgbtBlue = 255;
 	if (d_b_pix[i].rgbtBlue < 0)
 		d_b_pix[i].rgbtBlue = 0;
-	if (d_b_pix[i].rgbtGreen > 255)
+	if (d_b_pix[i].rgbtGreen >= 255)
 		d_b_pix[i].rgbtGreen = 255;
 	if (d_b_pix[i].rgbtGreen < 0)
 		d_b_pix[i].rgbtGreen = 0;
-	if (d_b_pix[i].rgbtRed > 255)
+	if (d_b_pix[i].rgbtRed >= 255)
 		d_b_pix[i].rgbtRed = 255;
 	if (d_b_pix[i].rgbtRed < 0)
 		d_b_pix[i].rgbtRed = 0;
@@ -84,8 +90,9 @@ __global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, RGBTRIPLE* ma
 
 int main()
 {
-	MaskAlloc();
 	GraphicInfo();
+	MaskAlloc();
+
 	FILE * fp;
 	
 	//fp = fopen("test3.bmp", "rb");
@@ -165,19 +172,19 @@ int main()
 		b_pix[i].rgbtGreen = pix[ip].rgbtGreen;
 		b_pix[i].rgbtRed = pix[ip].rgbtRed;
 
-		b_pix[i].rgbtBlue += Mask[im].rgbtBlue;
-		b_pix[i].rgbtGreen += Mask[im].rgbtGreen;
-		b_pix[i].rgbtRed += Mask[im].rgbtRed;
+		b_pix[i].rgbtBlue += Mask[im].blue;
+		b_pix[i].rgbtGreen += Mask[im].green;
+		b_pix[i].rgbtRed += Mask[im].red;
 
-		if (b_pix[i].rgbtBlue > 255)
+		if (b_pix[i].rgbtBlue >= 255)
 			b_pix[i].rgbtBlue = 255;
 		if (b_pix[i].rgbtBlue < 0)
 			b_pix[i].rgbtBlue = 0;
-		if (b_pix[i].rgbtGreen > 255)
+		if (b_pix[i].rgbtGreen >= 255)
 			b_pix[i].rgbtGreen = 255;
 		if (b_pix[i].rgbtGreen < 0)
 			b_pix[i].rgbtGreen = 0;
-		if (b_pix[i].rgbtRed > 255)
+		if (b_pix[i].rgbtRed >= 255)
 			b_pix[i].rgbtRed = 255;
 		if (b_pix[i].rgbtRed < 0)
 			b_pix[i].rgbtRed = 0;
@@ -254,7 +261,7 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 {
 	RGBTRIPLE * d_b_pix = 0;
 	RGBTRIPLE * d_pix = 0;
-	RGBTRIPLE * mask = 0;
+	MASK * mask = 0;
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
@@ -277,7 +284,7 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 		goto Error;
 	}
 
-	cudaStatus = cudaMalloc((void**)&mask, 25 * sizeof(RGBTRIPLE));
+	cudaStatus = cudaMalloc((void**)&mask, 25 * sizeof(MASK));
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMalloc failed!\n");
 		goto Error;
@@ -290,7 +297,7 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
 		goto Error;
 	}
 
-	cudaStatus = cudaMemcpy(mask, Mask, 25 * sizeof(RGBTRIPLE), cudaMemcpyHostToDevice);
+	cudaStatus = cudaMemcpy(mask, Mask, 25 * sizeof(MASK), cudaMemcpyHostToDevice);
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaMemcpy failed!\n");
 		goto Error;
@@ -338,10 +345,20 @@ void MaskAlloc()
 	fp = fopen("config_5.txt", "r");
 	for (int i = 0; i < 25; i++)
 	{
-		fscanf(fp, "%d%c", &Mask[i].rgbtBlue, &c);
-		fscanf(fp, "%d%c", &Mask[i].rgbtGreen, &c);
-		fscanf(fp, "%d%c", &Mask[i].rgbtRed, &c);
+		fscanf(fp, "%d%c", &Mask[i].red, &c);
+		fscanf(fp, "%d%c", &Mask[i].green, &c);
+		fscanf(fp, "%d%c", &Mask[i].blue, &c);
 	}
+	for (int i = 0; i < 5; i++)
+	{
+		for (int j = 0; j < 5; j++)
+		{
+			printf("%3d %3d %3d , ", Mask[j + 5 * i].red, Mask[j + 5 * i].green, Mask[j + 5 * i].blue);
+		}
+		printf("\n");
+	}
+
+
 	fclose(fp);
 }
 
