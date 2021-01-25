@@ -95,7 +95,7 @@ int main()
 	
 	//fp = fopen("test3.bmp", "rb");
 	//fp = fopen("lenna_406.bmp", "rb");
-	//fp = fopen("323test1.bmp", "rb");
+	//fp = fopen("323test5.bmp", "rb");
 	fp = fopen("input.bmp", "rb");
 
 	if (fp == NULL)
@@ -191,6 +191,7 @@ int main()
 	QueryPerformanceCounter(&tot_endClock); // CPU 시간측정 종료
 	total_Time_CPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 
+	//sprintf(str_Extend, "323test5_Extend_CPU.bmp");
 	sprintf(str_Extend, "output_CPU.bmp");
 
 	//Fwrite(str);
@@ -226,7 +227,7 @@ int main()
 	//sprintf(str, "test_GPU.bmp");
 	//sprintf(str_Extend, "test3_Extend.bmp");
 	//sprintf(str_Extend, "lenna_406_Extend.bmp");
-	//sprintf(str_Extend, "323test1_Extend_GPU.bmp");
+	//sprintf(str_Extend, "323test5_Extend_GPU.bmp");
 	sprintf(str_Extend, "output_GPU.bmp");
 
 	//Fwrite(str);
@@ -245,6 +246,7 @@ int main()
 	free(trash);
 	fclose(fp);
 
+	system("pause");
 	return 0;
 }
 
