@@ -207,7 +207,8 @@ int main()
 	total_Time_GPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "addWithCuda failed!");
+		fprintf(stderr, "extendWithCuda failed!");
+		system("pause");
 		return 1;
 	}
 	
@@ -216,6 +217,7 @@ int main()
 	cudaStatus = cudaDeviceReset();
 	if (cudaStatus != cudaSuccess) {
 		fprintf(stderr, "cudaDeviceReset failed!");
+		system("pause");
 		return 1;
 	}
 	printf("CPU 실행시간 : %f\nGPU 실행시간 : %f\n",
