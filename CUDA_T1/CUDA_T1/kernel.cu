@@ -10,21 +10,21 @@
 // 마스크값 배열
 RGBTRIPLE Mask[25];
 
-int threadsPerBlock = 1024;
+int* threadsPerBlock;
+int device_num = 0;
 
 double total_Time_CPU = 0;
 double total_Time_GPU = 0;
 LARGE_INTEGER beginClock, endClock, clockFreq;
 LARGE_INTEGER tot_beginClock, tot_endClock, tot_clockFreq;
 
-//BYTE * pix;
-//BYTE * b_pix;
 RGBTRIPLE * pix;
 RGBTRIPLE * b_pix;
 BITMAPFILEHEADER bfh;
 BITMAPINFOHEADER bih;
 BITMAPFILEHEADER b_bfh;
 BITMAPINFOHEADER b_bih;
+
 
 // 이미지 정보를 다루기 위해 사용하는 변수
 int channel = 5;
@@ -33,10 +33,8 @@ int bpl_size, b_bpl_size;
 int width, height, b_width, b_height;
 int pix_size;
 int b_pix_size;	// 5 X 5개 만큼 복붙한 이미지 사이즈
-int pad, b_pad;		// 패딩 메모리
-//unsigned char* pix; // 원본 이미지
-//unsigned char* pix_out; // GPU 연산결과 이미지
-BYTE * trash;
+int pad, b_pad;		// 패딩 메모리 사이즈
+BYTE trash[3] = {0};		// 패딩 메모리
 
 void GraphicInfo();				// 현재 장착된 그래픽카드의 정보를 불러온다
 char str[100];
@@ -135,17 +133,16 @@ int main()
 	printf("%d X %d Image size : %d X %d\n", channel, channel, b_width, b_height);
 	printf("%d X %d Memory size : %d byte\n", channel, channel, b_bpl_size);
 
-	// 쓰레기 값
-	trash = (BYTE *)calloc(b_pad, sizeof(BYTE));
-	// 원본 이미지 데이터
+	// 원본 이미지 데이터 할당
 	pix = (RGBTRIPLE *)calloc(pix_size, sizeof(RGBTRIPLE));
 	for (int i = 0; i < height; i++)
 	{
 		fread(pix + (i * width), sizeof(RGBTRIPLE), width, fp);
 		fread(&trash, sizeof(BYTE), pad, fp);
 	}
-
-	// 5 X 5 이미지 데이터
+	// 원본 이미지를 다 읽은 후 원본 파일은 닫는다.
+	fclose(fp);
+	// 5 X 5 이미지 데이터 할당
 	b_pix = (RGBTRIPLE *)calloc(b_pix_size, sizeof(RGBTRIPLE));
 
 	/*
@@ -199,15 +196,18 @@ int main()
 
 	memset(b_pix, 0, sizeof(unsigned char) * b_pix_size);
 
+	printf("Please input device_num.\n");
+	printf("device_num : ");
+	scanf("%d", &device_num);
 
 	QueryPerformanceCounter(&tot_beginClock); // GPU 시간측정 시작
 	// Add vectors in parallel.
-	cudaError_t cudaStatus = extendWithCuda(b_pix, threadsPerBlock);
+	cudaError_t cudaStatus = extendWithCuda(b_pix, threadsPerBlock[device_num]);
 	QueryPerformanceCounter(&tot_endClock); // GPU 시간측정 종료
 	total_Time_GPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "extendWithCuda failed!");
+		fprintf(stderr, "extendWithCuda failed!\n");
 		system("pause");
 		return 1;
 	}
@@ -216,7 +216,7 @@ int main()
 	// tracing tools such as Nsight and Visual Profiler to show complete traces.
 	cudaStatus = cudaDeviceReset();
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaDeviceReset failed!");
+		fprintf(stderr, "cudaDeviceReset failed!\n");
 		system("pause");
 		return 1;
 	}
@@ -245,8 +245,7 @@ int main()
 
 	free(pix);
 	free(b_pix);
-	free(trash);
-	fclose(fp);
+	free(threadsPerBlock);
 
 	system("pause");
 	return 0;
@@ -261,41 +260,41 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
     cudaError_t cudaStatus;
 
     // Choose which GPU to run on, change this on a multi-GPU system.
-    cudaStatus = cudaSetDevice(0);
+    cudaStatus = cudaSetDevice(device_num);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaSetDevice failed!  Do you have a CUDA-capable GPU installed?");
+        fprintf(stderr, "cudaSetDevice failed!\n  Do you have a CUDA-capable GPU installed?\n");
         goto Error;
     }
 
     // Allocate GPU buffers for three vectors (two input, one output)    .
     cudaStatus = cudaMalloc((void**)&d_b_pix, b_pix_size * sizeof(RGBTRIPLE));
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMalloc failed!");
+        fprintf(stderr, "cudaMalloc failed!\n");
         goto Error;
     }
 
 	cudaStatus = cudaMalloc((void**)&d_pix, pix_size * sizeof(RGBTRIPLE));
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
+		fprintf(stderr, "cudaMalloc failed!\n");
 		goto Error;
 	}
 
 	cudaStatus = cudaMalloc((void**)&mask, 25 * sizeof(RGBTRIPLE));
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMalloc failed!");
+		fprintf(stderr, "cudaMalloc failed!\n");
 		goto Error;
 	}
 
     // Copy input vectors from host memory to GPU buffers.
 	cudaStatus = cudaMemcpy(d_pix, pix, pix_size * sizeof(RGBTRIPLE), cudaMemcpyHostToDevice);
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed!");
+		fprintf(stderr, "cudaMemcpy failed!\n");
 		goto Error;
 	}
 
 	cudaStatus = cudaMemcpy(mask, Mask, 25 * sizeof(RGBTRIPLE), cudaMemcpyHostToDevice);
 	if (cudaStatus != cudaSuccess) {
-		fprintf(stderr, "cudaMemcpy failed!");
+		fprintf(stderr, "cudaMemcpy failed!\n");
 		goto Error;
 	}
 
@@ -306,7 +305,7 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
     // Check for any errors launching the kernel
     cudaStatus = cudaGetLastError();
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "addKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
+        fprintf(stderr, "extendKernel launch failed: %s\n", cudaGetErrorString(cudaStatus));
         goto Error;
     }
     
@@ -321,7 +320,7 @@ cudaError_t extendWithCuda(RGBTRIPLE* b_pix, int thread)
     // Copy output vector from GPU buffer to host memory.
     cudaStatus = cudaMemcpy(b_pix, d_b_pix, b_pix_size * sizeof(RGBTRIPLE), cudaMemcpyDeviceToHost);
     if (cudaStatus != cudaSuccess) {
-        fprintf(stderr, "cudaMemcpy failed!");
+        fprintf(stderr, "cudaMemcpy failed!\n");
         goto Error;
     }
 
@@ -340,6 +339,7 @@ void GraphicInfo()
 
 	int count;
 	cudaGetDeviceCount(&count);
+	threadsPerBlock = (int *)calloc(count, sizeof(int));
 
 	for (int i = 0; i < count; i++) {
 		cudaGetDeviceProperties(&prop, i);
@@ -372,6 +372,7 @@ void GraphicInfo()
 		printf("Registers per mp:  %d\n", prop.regsPerBlock);
 		printf("Threads in warp:  %d\n", prop.warpSize);
 		printf("Max threads per block:  %d\n", prop.maxThreadsPerBlock);
+		threadsPerBlock[i] = prop.maxThreadsPerBlock;
 		printf("Max thread dimensions:  (%d, %d, %d)\n", prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
 		printf("Max grid dimensions:  (%d, %d, %d)\n", prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
 		printf("--------------------------------------\n");
