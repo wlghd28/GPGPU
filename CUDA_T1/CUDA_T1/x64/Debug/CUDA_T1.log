@@ -1,15 +1,40 @@
 ﻿  Compiling CUDA source file kernel.cu...
   
   C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\CUDA_T1>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\bin\HostX86\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\include"  -G   --keep-dir x64\Debug  -maxrregcount=0  --machine 64 --compile -cudart static  -g  -DWIN32 -DWIN64 -D_DEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /Od /Fdx64\Debug\vc141.pdb /FS /Zi /RTC1 /MDd " -o x64\Debug\kernel.cu.obj "C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\CUDA_T1\kernel.cu" 
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(70): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(74): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(78): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(179): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(183): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(187): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(70): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(74): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(78): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(179): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(183): warning : pointless comparison of unsigned integer with zero
+  
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(187): warning : pointless comparison of unsigned integer with zero
+  
   kernel.cu
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(295): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(295): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(296): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(296): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(297): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(297): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(298): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(298): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(303): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(303): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(222): warning C4477: 'printf' : 서식 문자열 '%d'에 'int' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'double'입니다.
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(358): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(358): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(359): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(359): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(360): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(360): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(361): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(361): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(366): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(366): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
   CUDA_T1.vcxproj -> C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\x64\Debug\CUDA_T1.exe

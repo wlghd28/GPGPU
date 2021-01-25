@@ -95,7 +95,8 @@ int main()
 	
 	//fp = fopen("test3.bmp", "rb");
 	//fp = fopen("lenna_406.bmp", "rb");
-	fp = fopen("323test1.bmp", "rb");
+	//fp = fopen("323test1.bmp", "rb");
+	fp = fopen("input.bmp", "rb");
 
 	if (fp == NULL)
 	{
@@ -145,7 +146,7 @@ int main()
 
 	// 5 X 5 이미지 데이터
 	b_pix = (RGBTRIPLE *)calloc(b_pix_size, sizeof(RGBTRIPLE));
-	
+
 	/*
 	for(int i = 0; i < 1000; i++)
 	{
@@ -153,23 +154,50 @@ int main()
 	}
 	*/
 
-
 	QueryPerformanceFrequency(&tot_clockFreq);	// 시간을 측정하기위한 준비
 
-	/*
 	QueryPerformanceCounter(&tot_beginClock); // CPU 시간측정 시작
-	for (int i = 0; i < pix_size; i++)
+	for (int i = 0; i < b_pix_size; i++)
 	{
-		pix[i] += 5;
-		//printf("%d\n", pix[i]);
+		int px = i % width;
+		int py = (i % (b_width * height)) / b_width;
+		int ip = px + py * width;
+		int mx = (i % b_width) / width;
+		int my = i / (b_width * height);
+		int im = mx + my * 5;
+
+		b_pix[i].rgbtBlue = pix[ip].rgbtBlue;
+		b_pix[i].rgbtGreen = pix[ip].rgbtGreen;
+		b_pix[i].rgbtRed = pix[ip].rgbtRed;
+
+		b_pix[i].rgbtBlue += Mask[im].rgbtBlue;
+		b_pix[i].rgbtGreen += Mask[im].rgbtGreen;
+		b_pix[i].rgbtRed += Mask[im].rgbtRed;
+
+		if (b_pix[i].rgbtBlue > 255)
+			b_pix[i].rgbtBlue = 255;
+		if (b_pix[i].rgbtBlue < 0)
+			b_pix[i].rgbtBlue = 0;
+		if (b_pix[i].rgbtGreen > 255)
+			b_pix[i].rgbtGreen = 255;
+		if (b_pix[i].rgbtGreen < 0)
+			b_pix[i].rgbtGreen = 0;
+		if (b_pix[i].rgbtRed > 255)
+			b_pix[i].rgbtRed = 255;
+		if (b_pix[i].rgbtRed < 0)
+			b_pix[i].rgbtRed = 0;
 	}
 	QueryPerformanceCounter(&tot_endClock); // CPU 시간측정 종료
 	total_Time_CPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
 
-	sprintf(str, "323test1.bmp_CPU.bmp");
-	Fwrite(str);
-	*/
-	
+	sprintf(str_Extend, "323test1_Extend_CPU.bmp");
+
+	//Fwrite(str);
+	Fwrite_Extend(str_Extend);
+
+	memset(b_pix, 0, sizeof(unsigned char) * b_pix_size);
+
+
 	QueryPerformanceCounter(&tot_beginClock); // GPU 시간측정 시작
 	// Add vectors in parallel.
 	cudaError_t cudaStatus = extendWithCuda(b_pix, threadsPerBlock);
@@ -191,14 +219,18 @@ int main()
 	printf("CPU 실행시간 : %f\nGPU 실행시간 : %f\n",
 		total_Time_CPU * 1000, total_Time_GPU * 1000);
 
+	printf("CPU / GPU = %lf\n",
+		total_Time_CPU / total_Time_GPU);
 
 	//sprintf(str, "test_GPU.bmp");
 	//sprintf(str_Extend, "test3_Extend.bmp");
 	//sprintf(str_Extend, "lenna_406_Extend.bmp");
-	sprintf(str_Extend, "323test1_Extend.bmp");
+	//sprintf(str_Extend, "323test1_Extend_GPU.bmp");
+	sprintf(str_Extend, "output.bmp");
 
 	//Fwrite(str);
 	Fwrite_Extend(str_Extend);
+
 	/*
 	for (int i = 0; i < 1000; i++)
 	{
