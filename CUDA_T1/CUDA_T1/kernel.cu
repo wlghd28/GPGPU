@@ -10,8 +10,10 @@
 // 마스크값 배열
 RGBTRIPLE Mask[25];
 
+char** device_name = 0;
 int* threadsPerBlock;
 int device_num = 0;
+int device_count = 0;
 
 double total_Time_CPU = 0;
 double total_Time_GPU = 0;
@@ -89,6 +91,7 @@ int main()
 	}
 
 	GraphicInfo();
+
 	FILE * fp;
 	
 	//fp = fopen("test3.bmp", "rb");
@@ -196,10 +199,6 @@ int main()
 
 	memset(b_pix, 0, sizeof(unsigned char) * b_pix_size);
 
-	printf("Please input device_num.\n");
-	printf("device_num : ");
-	scanf("%d", &device_num);
-
 	QueryPerformanceCounter(&tot_beginClock); // GPU 시간측정 시작
 	// Add vectors in parallel.
 	cudaError_t cudaStatus = extendWithCuda(b_pix, threadsPerBlock[device_num]);
@@ -246,6 +245,11 @@ int main()
 	free(pix);
 	free(b_pix);
 	free(threadsPerBlock);
+	for (int i = 0; i < device_count; i++)
+	{
+		free(device_name[i]);
+	}
+	free(device_name);
 
 	system("pause");
 	return 0;
@@ -339,10 +343,17 @@ void GraphicInfo()
 
 	int count;
 	cudaGetDeviceCount(&count);
+	device_count = count;
 	threadsPerBlock = (int *)calloc(count, sizeof(int));
+	device_name = (char **)calloc(count, sizeof(char*));
+
 
 	for (int i = 0; i < count; i++) {
+		device_name[i] = (char *)malloc(sizeof(char) * 256);
 		cudaGetDeviceProperties(&prop, i);
+		memcpy(device_name[i], prop.name, 256);
+		threadsPerBlock[i] = prop.maxThreadsPerBlock;
+
 		printf("   --- General Information for device %d ---\n", i);
 		printf("Name:  %s\n", prop.name);
 		printf("Compute capability:  %d.%d\n", prop.major, prop.minor);
@@ -372,13 +383,19 @@ void GraphicInfo()
 		printf("Registers per mp:  %d\n", prop.regsPerBlock);
 		printf("Threads in warp:  %d\n", prop.warpSize);
 		printf("Max threads per block:  %d\n", prop.maxThreadsPerBlock);
-		threadsPerBlock[i] = prop.maxThreadsPerBlock;
 		printf("Max thread dimensions:  (%d, %d, %d)\n", prop.maxThreadsDim[0], prop.maxThreadsDim[1], prop.maxThreadsDim[2]);
 		printf("Max grid dimensions:  (%d, %d, %d)\n", prop.maxGridSize[0], prop.maxGridSize[1], prop.maxGridSize[2]);
 		printf("--------------------------------------\n");
 		printf("\n");
 	}
-
+	printf("device_list\n");
+	for (int i = 0; i < device_count; i++)
+	{
+		printf("device%d : %s\n", i, device_name[i]);
+	}
+	printf("Please input device_num.\n");
+	printf("device_num : ");
+	scanf("%d", &device_num);
 }
 
 void Fwrite(char * fn)
