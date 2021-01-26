@@ -1,26 +1,26 @@
 ﻿  Compiling CUDA source file kernel.cu...
   
-  C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\CUDA_T1>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\bin\HostX86\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\include"     --keep-dir x64\Release  -maxrregcount=0  --machine 64 --compile -cudart static    -DWIN32 -DWIN64 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Fdx64\Release\vc141.pdb /FS   /MT " -o x64\Release\kernel.cu.obj "C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\CUDA_T1\kernel.cu" 
+  C:\Users\USER\GPGPU\CUDA_T1\CUDA_T1>"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\bin\nvcc.exe" -gencode=arch=compute_52,code=\"sm_52,compute_52\" --use-local-env -ccbin "C:\Program Files (x86)\Microsoft Visual Studio\2017\Community\VC\Tools\MSVC\14.16.27023\bin\HostX86\x64" -x cu   -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\include" -I"C:\Program Files\NVIDIA GPU Computing Toolkit\CUDA\v11.2\include"     --keep-dir x64\Release  -maxrregcount=0  --machine 64 --compile -cudart static    -DWIN32 -DWIN64 -DNDEBUG -D_CONSOLE -D_MBCS -Xcompiler "/EHsc /W3 /nologo /O2 /Fdx64\Release\vc141.pdb /FS   /MT " -o x64\Release\kernel.cu.obj "C:\Users\USER\GPGPU\CUDA_T1\CUDA_T1\kernel.cu" 
   kernel.cu
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(189): warning C4244: '=': 'short'에서 'BYTE'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(199): warning C4244: '=': 'short'에서 'BYTE'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(209): warning C4244: '=': 'short'에서 'BYTE'(으)로 변환하면서 데이터가 손실될 수 있습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(369): warning C4477: 'fscanf' : 서식 문자열 '%d'에 'int *' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'char *'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(369): note: 서식 문자열에서 '%hhd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(370): warning C4477: 'fscanf' : 서식 문자열 '%d'에 'int *' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'char *'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(370): note: 서식 문자열에서 '%hhd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(371): warning C4477: 'fscanf' : 서식 문자열 '%d'에 'int *' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'char *'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(371): note: 서식 문자열에서 '%hhd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(420): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(420): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(421): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(421): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(422): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(422): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(423): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(423): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(428): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
-  C:/Users/USER/Desktop/지홍/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(428): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
-     C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\x64\Release\CUDA_T1.lib 라이브러리 및 C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\x64\Release\CUDA_T1.exp 개체를 생성하고 있습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(189): warning C4244: '=': 'short'에서 'BYTE'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(199): warning C4244: '=': 'short'에서 'BYTE'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(209): warning C4244: '=': 'short'에서 'BYTE'(으)로 변환하면서 데이터가 손실될 수 있습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(375): warning C4477: 'fscanf' : 서식 문자열 '%d'에 'int *' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'char *'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(375): note: 서식 문자열에서 '%hhd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(376): warning C4477: 'fscanf' : 서식 문자열 '%d'에 'int *' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'char *'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(376): note: 서식 문자열에서 '%hhd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(377): warning C4477: 'fscanf' : 서식 문자열 '%d'에 'int *' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'char *'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(377): note: 서식 문자열에서 '%hhd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(426): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(426): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(427): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(427): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(428): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(428): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(429): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(429): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(434): warning C4477: 'printf' : 서식 문자열 '%ld'에 'long' 형식의 인수가 필요하지만 variadic 인수 1의 형식이 'size_t'입니다.
+  C:/Users/USER/GPGPU/CUDA_T1/CUDA_T1/kernel.cu(434): note: 서식 문자열에서 '%zd'을(를) 사용하는 것이 좋습니다.
+     C:\Users\USER\GPGPU\CUDA_T1\x64\Release\CUDA_T1.lib 라이브러리 및 C:\Users\USER\GPGPU\CUDA_T1\x64\Release\CUDA_T1.exp 개체를 생성하고 있습니다.
   LINK : /LTCG를 지정했지만 코드를 생성할 필요가 없습니다. 명령줄에서 /LTCG를 제거하면 링커 성능이 향상됩니다.
-  CUDA_T1.vcxproj -> C:\Users\USER\Desktop\지홍\GPGPU\CUDA_T1\x64\Release\CUDA_T1.exe
+  CUDA_T1.vcxproj -> C:\Users\USER\GPGPU\CUDA_T1\x64\Release\CUDA_T1.exe

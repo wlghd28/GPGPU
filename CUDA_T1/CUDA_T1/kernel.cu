@@ -362,6 +362,12 @@ void MaskAlloc()
 	char c;
 	FILE * fp;
 	fp = fopen("config_5.txt", "r");
+	if (fp == NULL)
+	{
+		printf("File Not Found!!\n");
+		system("pause");
+		return;
+	}
 	printf("\n");
 	printf("--- 마스크 값 행렬 ---\n");
 	for (int i = 0; i < 25; i++)
