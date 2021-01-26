@@ -63,29 +63,37 @@ __global__ void extendKernel(RGBTRIPLE* d_b_pix, RGBTRIPLE* d_pix, MASK* mask, c
 	int mx = (i % b_width) / width;
 	int my = i / (b_width * height);
 	int im = mx + my * 5;
+	short p, m, sum;
 
-	d_b_pix[i].rgbtBlue = d_pix[ip].rgbtBlue;
-	d_b_pix[i].rgbtGreen = d_pix[ip].rgbtGreen;
-	d_b_pix[i].rgbtRed = d_pix[ip].rgbtRed;
-
-	d_b_pix[i].rgbtBlue += mask[im].blue;
-	d_b_pix[i].rgbtGreen += mask[im].green;
-	d_b_pix[i].rgbtRed += mask[im].red;
-
-	if (d_b_pix[i].rgbtBlue >= 255)
+	p = d_pix[ip].rgbtBlue;
+	m = mask[im].blue;
+	sum = p + m;
+	if (sum >= 255)
 		d_b_pix[i].rgbtBlue = 255;
-	if (d_b_pix[i].rgbtBlue < 0)
+	else if (sum < 0)
 		d_b_pix[i].rgbtBlue = 0;
-	if (d_b_pix[i].rgbtGreen >= 255)
-		d_b_pix[i].rgbtGreen = 255;
-	if (d_b_pix[i].rgbtGreen < 0)
-		d_b_pix[i].rgbtGreen = 0;
-	if (d_b_pix[i].rgbtRed >= 255)
-		d_b_pix[i].rgbtRed = 255;
-	if (d_b_pix[i].rgbtRed < 0)
-		d_b_pix[i].rgbtRed = 0;
+	else
+		d_b_pix[i].rgbtBlue = sum;
 
-	//d_b_pix[i] = d_pix[i2];
+	p = d_pix[ip].rgbtGreen;
+	m = mask[im].green;
+	sum = p + m;
+	if (sum >= 255)
+		d_b_pix[i].rgbtGreen = 255;
+	else if (sum < 0)
+		d_b_pix[i].rgbtGreen = 0;
+	else
+		d_b_pix[i].rgbtGreen= sum;
+
+	p = d_pix[ip].rgbtRed;
+	m = mask[im].red;
+	sum = p + m;
+	if (sum >= 255)
+		d_b_pix[i].rgbtRed = 255;
+	else if (sum < 0)
+		d_b_pix[i].rgbtRed = 0;
+	else
+		d_b_pix[i].rgbtRed = sum;
 }
 
 int main()
@@ -168,26 +176,37 @@ int main()
 		int my = i / (b_width * height);
 		int im = mx + my * 5;
 
-		b_pix[i].rgbtBlue = pix[ip].rgbtBlue;
-		b_pix[i].rgbtGreen = pix[ip].rgbtGreen;
-		b_pix[i].rgbtRed = pix[ip].rgbtRed;
+		short p, m, sum;
 
-		b_pix[i].rgbtBlue += Mask[im].blue;
-		b_pix[i].rgbtGreen += Mask[im].green;
-		b_pix[i].rgbtRed += Mask[im].red;
-
-		if (b_pix[i].rgbtBlue >= 255)
+		p = pix[ip].rgbtBlue;
+		m = Mask[im].blue;
+		sum = p + m;
+		if (sum >= 255)
 			b_pix[i].rgbtBlue = 255;
-		if (b_pix[i].rgbtBlue < 0)
+		else if (sum < 0)
 			b_pix[i].rgbtBlue = 0;
-		if (b_pix[i].rgbtGreen >= 255)
+		else
+			b_pix[i].rgbtBlue = sum;
+
+		p = pix[ip].rgbtGreen;
+		m = Mask[im].green;
+		sum = p + m;
+		if (sum >= 255)
 			b_pix[i].rgbtGreen = 255;
-		if (b_pix[i].rgbtGreen < 0)
+		else if (sum < 0)
 			b_pix[i].rgbtGreen = 0;
-		if (b_pix[i].rgbtRed >= 255)
+		else
+			b_pix[i].rgbtGreen = sum;
+
+		p = pix[ip].rgbtRed;
+		m = Mask[im].red;
+		sum = p + m;
+		if (sum >= 255)
 			b_pix[i].rgbtRed = 255;
-		if (b_pix[i].rgbtRed < 0)
+		else if (sum < 0)
 			b_pix[i].rgbtRed = 0;
+		else
+			b_pix[i].rgbtRed = sum;
 	}
 	QueryPerformanceCounter(&tot_endClock); // CPU 시간측정 종료
 	total_Time_CPU = (double)(tot_endClock.QuadPart - tot_beginClock.QuadPart) / tot_clockFreq.QuadPart;
@@ -343,6 +362,8 @@ void MaskAlloc()
 	char c;
 	FILE * fp;
 	fp = fopen("config_5.txt", "r");
+	printf("\n");
+	printf("--- 마스크 값 행렬 ---\n");
 	for (int i = 0; i < 25; i++)
 	{
 		fscanf(fp, "%d%c", &Mask[i].red, &c);
@@ -357,7 +378,7 @@ void MaskAlloc()
 		}
 		printf("\n");
 	}
-
+	printf("\n");
 
 	fclose(fp);
 }
